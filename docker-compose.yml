@@ -1,0 +1,12 @@
+---
+mysql:
+  image: mysql
+  environment:
+    MYSQL_PASSWORD: password_here
+    MYSQL_USER: username_here
+    MYSQL_DATABASE: database_name_here
+
+wordpress:
+  build: .
+  links:
+    - mysql
