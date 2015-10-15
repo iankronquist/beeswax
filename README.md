@@ -2,7 +2,7 @@ Installation
 ------------
 On OS X with homebrew you'll need VirtualBox and vagrant:
 
-First, initialize and start the docker-machine vm:
+First, initialize and start the vm:
 ```
 $ vagrant up --provision
 ```
