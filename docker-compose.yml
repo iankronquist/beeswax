@@ -5,8 +5,11 @@ mysql:
     MYSQL_PASSWORD: password_here
     MYSQL_USER: username_here
     MYSQL_DATABASE: database_name_here
+    MYSQL_ROOT_PASSWORD: root
 
 wordpress:
   build: .
+  ports:
+    - "8000:80"
   links:
     - mysql
