@@ -65,7 +65,7 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sudo yum install -y docker tcpdump
+    sudo yum install -y docker tcpdump gcc
     sudo easy_install pip
     sudo pip install docker-compose
     sudo systemctl enable docker
