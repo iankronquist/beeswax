@@ -34,3 +34,5 @@ $ sudo ln -sf /proc/`docker inspect -f '{{ .State.Pid }}' seniorprojectexperimen
 ```
 $ sudo ip netns exec wordpress tcpdump > dump
 ```
+
+I am wonderful and awesome, FEAR ME!
