@@ -34,3 +34,8 @@ $ sudo ln -sf /proc/`docker inspect -f '{{ .State.Pid }}' seniorprojectexperimen
 ```
 $ sudo ip netns exec wordpress tcpdump > dump
 ```
+
+NOTES:
+You can find all of the files the containers use under here:
+/mnt/sda1/var/lib/docker/aufs/mnt
+I found this out from reading `docker info`
