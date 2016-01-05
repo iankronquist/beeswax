@@ -1,8 +1,10 @@
-# Installation
+# None of Your Beeswax [![build status](https://travis-ci.org/iankronquist/senior-project-experiment.svg)](https://travis-ci.org/iankronquist/senior-project-experiment)
+
+## Installation
 This honeypot only runs on Linux. Luckily for OS X users, there is a
 Vagrantfile in the root of the repo to make starting development on OS X easy.
 
-## Dependencies
+### Dependencies
 You will need this software installed to run the honeypot. If you are using the
 Vagrantfile this software will be installed as part of provisioning.
 * Docker
@@ -24,7 +26,7 @@ $ vagrant ssh
 $ cd senior-project-experiment
 ```
 
-# Building
+## Building
 Run:
 ```
 $ go build
@@ -33,7 +35,7 @@ $ go build
 Next visit http://localhost:8000 in your web browser and finish configuring
 WordPress.
 
-# Monitoring Notes
+## Monitoring Notes
 
 Configure `ip netns`:
 ```
