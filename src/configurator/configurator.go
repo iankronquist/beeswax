@@ -28,10 +28,9 @@ func StartContainers(c Config) error {
 	return nil
 }
 
-func ReadConfig() (Config, error) {
-	default_config_file := "./honeypot_config.json"
+func ReadConfig(fileName string) (Config, error) {
 	config := Config{}
-	data, err := ioutil.ReadFile(default_config_file)
+	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return config, err
 	}
