@@ -65,12 +65,13 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sudo yum install -y docker tcpdump gcc
+    sudo yum install -y docker tcpdump gcc golang
     sudo easy_install pip
     sudo pip install docker-compose
     sudo systemctl enable docker
     sudo systemctl start docker
     sudo groupadd docker
     sudo usermod -aG docker vagrant
+    echo 'export PS1="\\033[1;32m\\u@\\h:\\w$ \\033[00m"\n alias l=ls\n alias v=vi\n export GOPATH=/home/vagrant/senior-project-experiment' > .bashrc
   SHELL
 end
