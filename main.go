@@ -1,10 +1,10 @@
 package main
 
 import (
-	"configurator"
-	_ "filter"
-	_ "monitor"
-	_ "reporter"
+	"github.com/iankronquist/senior-project-experiment/src/configurator"
+	_"github.com/iankronquist/senior-project-experiment/src/monitor"
+	_"github.com/iankronquist/senior-project-experiment/src/filter"
+	_"github.com/iankronquist/senior-project-experiment/src/reporter"
 )
 
 func main() {
