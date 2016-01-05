@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	config, err := configurator.ReadConfig()
+	config, err := configurator.ReadConfig("./honeypot_config.json")
 	if err != nil {
 		panic(err)
 	}
