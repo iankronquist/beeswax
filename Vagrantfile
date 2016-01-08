@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder ".", "/home/vagrant/senior-project-experiment"
+  config.vm.synced_folder ".", "/home/vagrant/gopath/src/github.com/iankronquist/senior-project-experiment"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -65,13 +65,16 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sudo yum install -y docker tcpdump gcc golang
+    sudo yum update -y
+    sudo yum install -y docker
+    sudo yum install -y tcpdump gcc golang
     sudo easy_install pip
     sudo pip install docker-compose
     sudo systemctl enable docker
     sudo systemctl start docker
     sudo groupadd docker
     sudo usermod -aG docker vagrant
-    echo 'export PS1="\\033[1;32m\\u@\\h:\\w$ \\033[00m"\n alias l=ls\n alias v=vi\n export GOPATH=/home/vagrant/senior-project-experiment' > .bashrc
+    echo 'export GOPATH=~/gopath' > .bashrc
+    echo 'export PS1="\\033[1;32m\\u@\\h:\\W$ \\033[00m"\n alias l=ls\n alias v=vi\n' >> .bashrc
   SHELL
 end
