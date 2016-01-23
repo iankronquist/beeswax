@@ -123,7 +123,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 fprintf(stdout, "UMASK: %X", event->mask);
             }
         
-}
+
             /* Print the name of the watched directory */
             
             for (i = 1; i < argc; ++i)
