@@ -96,6 +96,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 fprintf(stdout,"IN_MOVED_FROM: ");
             }
             if (IN_MOVED_TO & event->mask)
+            {
                 fprintf(stdout,"IN_MOVED_TO: ");
             }
             if (IN_CREATE & event->mask)
