@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 /* Read all available inotify events from the file descriptor 'fd'.
- *           wd is the table of watch descriptors for the directories in argv.
+ *          wd is the table of watch descriptors for the directories in argv.
  *                     argc is the length of wd and argv.
  *                               argv is the list of watched directories.
  *                                         Entry 0 of wd and argv is unused. */
@@ -57,13 +57,14 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             event = (const struct inotify_event *) ptr;
             
             /* Print event type */
-            
-            if (event->mask & IN_OPEN)
-                printf("IN_OPEN: ");
-            if (event->mask & IN_CLOSE_NOWRITE)
-                printf("IN_CLOSE_NOWRITE: ");
-            if (event->mask & IN_CLOSE_WRITE)
-                printf("IN_CLOSE_WRITE: ");
+            switch (event->mask)
+            {
+                case IN_ACCESS:
+                    fprintf(stdout,"IN_ACCESS: ");
+                    break;
+                default:
+                    fprintf(stdout, "UMASK: %X", event->mask);
+            }
             
             /* Print the name of the watched directory */
             
@@ -71,7 +72,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             {
                 if (wd[i] == event->wd)
                 {
-                    printf("%s/", argv[i]);
+                    fprintf(stdout,"%s/", argv[i]);
                     break;
                 }
             }
@@ -79,14 +80,14 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             /* Print the name of the file */
             
             if (event->len)
-                printf("%s", event->name);
+                fprintf(stdout, "%s", event->name);
             
             /* Print type of filesystem object */
             
             if (event->mask & IN_ISDIR)
-                printf(" [directory]\n");
+                fprintf(stdout, " [directory]\n");
             else
-                printf(" [file]\n");
+                fprintf(stdout, " [file]\n");
         }
     }
 }
@@ -102,11 +103,11 @@ main(int argc, char* argv[])
     
     if (argc < 2)
     {
-        printf("Usage: %s PATH [PATH ...]\n", argv[0]);
+        fprintf(stdout, "Usage: %s PATH [PATH ...]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     
-    printf("Press ENTER key to terminate.\n");
+    fprintf(stdout, "Press ENTER key to terminate.\n");
     
     /* Create the file descriptor for accessing the inotify API */
     
@@ -133,7 +134,7 @@ main(int argc, char* argv[])
     for (i = 1; i < argc; i++)
     {
         wd[i] = inotify_add_watch(fd, argv[i],
-                                  IN_OPEN | IN_CLOSE);
+                                  IN_ALL_EVENTS);
         if (wd[i] == -1)
         {
             fprintf(stderr, "Cannot watch '%s'\n", argv[i]);
@@ -158,7 +159,7 @@ main(int argc, char* argv[])
     
     /* Wait for events and/or terminal input */
     
-    printf("Listening for events.\n");
+    fprintf(stdout, "Listening for events.\n");
     while (1)
     {
         poll_num = poll(fds, nfds, -1);
@@ -193,7 +194,7 @@ main(int argc, char* argv[])
         }
     }
     
-    printf("Listening for events stopped.\n");
+    fprintf(stdout, "Listening for events stopped.\n");
     
     /* Close inotify file descriptor */
     
