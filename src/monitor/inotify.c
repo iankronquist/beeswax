@@ -59,7 +59,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             event = (const struct inotify_event *) ptr;
             
             /* Print event type */
-       
+            //Fix this section
             if (IN_ACCESS & event->mask)
             {
                 fprintf(stdout,"IN_ACCESS: ");
@@ -117,7 +117,8 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 fprintf(stdout, "UMASK: %X", event->mask);
             }
         
-
+	    /* Once DELETE_SELF -> quit
+	    */
             /* Print the name of the watched directory */
             
             for (i = 1; i < argc; ++i)
@@ -136,9 +137,9 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             /* Print type of filesystem object */
             
             if (event->mask & IN_ISDIR)
-                fprintf(stdout, " [directory] ");
+                fprintf(stdout, " [directory] \n");
             else
-                fprintf(stdout, " [file] ");
+                fprintf(stdout, " [file] \n");
             
 
             
