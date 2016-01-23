@@ -62,8 +62,45 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 case IN_ACCESS:
                     fprintf(stdout,"IN_ACCESS: ");
                     break;
+                case IN_MODIFY:
+                    fprintf(stdout,"IN_MODIFY: ");
+                    break;
+                case IN_ATTRIB:
+                    fprintf(stdout,"IN_ATTRIB: ");
+                    break;
+                case IN_CLOSE_WRITE:
+                    fprintf(stdout,"IN_CLOSE_WRITE: ");
+                    break;
+                case IN_CLOSE_NOWRITE:
+                    fprintf(stdout,"IN_CLOSE_NOWRITE: ");
+                    break;
+                case IN_OPEN:
+                    fprintf(stdout,"IN_OPEN: ");
+                    break;
+                case IN_MOVED_FROM:
+                    fprintf(stdout,"IN_MOVED_FROM: ");
+                    break;
+                case IN_MOVED_TO:
+                    fprintf(stdout,"IN_MOVED_TO: ");
+                    break;
+                case:IN_CREATE:
+                    fprintf(stdout,"IN_CREATE: ");
+                    break;
+                case IN_DELETE:
+                    fprintf(stdout,"IN_DELETE: ");
+                    break;
+                case IN_DELETE_SELF:
+                    fprintf(stdout,"IN_DELETE_SELF: ");
+                    break;
+                case IN_CLOSE:
+                    fprintf(stdout,"IN_CLOSE: ");
+                    break;
+                case IN_MOVE:
+                    fprintf(stdout,"IN_MOVE: ");
+                    break;
                 default:
                     fprintf(stdout, "UMASK: %X", event->mask);
+                    break;
             }
             
             /* Print the name of the watched directory */
