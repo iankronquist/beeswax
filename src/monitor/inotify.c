@@ -5,6 +5,8 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 
+#define DEBUG 1
+
 /* Read all available inotify events from the file descriptor 'fd'.
  *          wd is the table of watch descriptors for the directories in argv.
  *                     argc is the length of wd and argv.
@@ -56,53 +58,72 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             
             event = (const struct inotify_event *) ptr;
             
-            /* Print event type */
-            switch (event->mask)
-            {
-                case IN_ACCESS:
-                    fprintf(stdout,"IN_ACCESS: ");
-                    break;
-                case IN_MODIFY:
-                    fprintf(stdout,"IN_MODIFY: ");
-                    break;
-                case IN_ATTRIB:
-                    fprintf(stdout,"IN_ATTRIB: ");
-                    break;
-                case IN_CLOSE_WRITE:
-                    fprintf(stdout,"IN_CLOSE_WRITE: ");
-                    break;
-                case IN_CLOSE_NOWRITE:
-                    fprintf(stdout,"IN_CLOSE_NOWRITE: ");
-                    break;
-                case IN_OPEN:
-                    fprintf(stdout,"IN_OPEN: ");
-                    break;
-                case IN_MOVED_FROM:
-                    fprintf(stdout,"IN_MOVED_FROM: ");
-                    break;
-                case IN_MOVED_TO:
-                    fprintf(stdout,"IN_MOVED_TO: ");
-                    break;
-                case IN_CREATE:
-                    fprintf(stdout,"IN_CREATE: ");
-                    break;
-                case IN_DELETE:
-                    fprintf(stdout,"IN_DELETE: ");
-                    break;
-                case IN_DELETE_SELF:
-                    fprintf(stdout,"IN_DELETE_SELF: ");
-                    break;
-                case IN_CLOSE:
-                    fprintf(stdout,"IN_CLOSE: ");
-                    break;
-                case IN_MOVE:
-                    fprintf(stdout,"IN_MOVE: ");
-                    break;
-                default:
-                    fprintf(stdout, "UMASK: %X", event->mask);
-                    break;
-            }
+            /* Print type of filesystem object */
             
+            if (event->mask & IN_ISDIR)
+                fprintf(stdout, " [directory] ");
+            else
+                fprintf(stdout, " [file] ");
+
+            /* Print event type */
+       
+            if (IN_ACCESS & event->mask)
+            {
+                fprintf(stdout,"IN_ACCESS: ");
+            }
+            if (IN_MODIFY & event->mask)
+            {
+                fprintf(stdout,"IN_MODIFY: ");
+            }
+            if (IN_ATTRIB & event->mask)
+            {
+                fprintf(stdout,"IN_ATTRIB: ");
+            }
+            if (IN_CLOSE_WRITE & event->mask)
+            {
+                fprintf(stdout,"IN_CLOSE_WRITE: ");
+            }
+            if (IN_CLOSE_NOWRITE & event->mask)
+            {
+                fprintf(stdout,"IN_CLOSE_NOWRITE: ");
+            }
+            if (IN_OPEN & event->mask)
+            {
+                fprintf(stdout,"IN_OPEN: ");
+            }
+            if (IN_MOVED_FROM & event->mask)
+            {
+                fprintf(stdout,"IN_MOVED_FROM: ");
+            }
+            if (IN_MOVED_TO & event->mask)
+                fprintf(stdout,"IN_MOVED_TO: ");
+            }
+            if (IN_CREATE & event->mask)
+            {
+                fprintf(stdout,"IN_CREATE: ");
+            }
+            if (IN_DELETE & event->mask)
+            {
+                fprintf(stdout,"IN_DELETE: ");
+            }
+            if (IN_DELETE_SELF & event->mask)
+            {
+                fprintf(stdout,"IN_DELETE_SELF: ");
+            }
+            /*if (IN_CLOSE & event->mask)
+            {
+                fprintf(stdout,"IN_CLOSE: ");
+            }
+            if (IN_MOVE & event->mask)
+            {
+                fprintf(stdout,"IN_MOVE: ");
+            }*/
+            if(DEBUG)
+            {
+                fprintf(stdout, "UMASK: %X", event->mask);
+            }
+        
+}
             /* Print the name of the watched directory */
             
             for (i = 1; i < argc; ++i)
@@ -119,12 +140,6 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             if (event->len)
                 fprintf(stdout, "%s", event->name);
             
-            /* Print type of filesystem object */
-            
-            if (event->mask & IN_ISDIR)
-                fprintf(stdout, " [directory]\n");
-            else
-                fprintf(stdout, " [file]\n");
         }
     }
 }
