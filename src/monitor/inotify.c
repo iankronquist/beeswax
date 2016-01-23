@@ -83,7 +83,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 case IN_MOVED_TO:
                     fprintf(stdout,"IN_MOVED_TO: ");
                     break;
-                case:IN_CREATE:
+                case IN_CREATE:
                     fprintf(stdout,"IN_CREATE: ");
                     break;
                 case IN_DELETE:
