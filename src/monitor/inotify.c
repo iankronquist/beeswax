@@ -58,13 +58,6 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             
             event = (const struct inotify_event *) ptr;
             
-            /* Print type of filesystem object */
-            
-            if (event->mask & IN_ISDIR)
-                fprintf(stdout, " [directory] ");
-            else
-                fprintf(stdout, " [file] ");
-
             /* Print event type */
        
             if (IN_ACCESS & event->mask)
@@ -140,6 +133,14 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             
             if (event->len)
                 fprintf(stdout, "%s", event->name);
+            /* Print type of filesystem object */
+            
+            if (event->mask & IN_ISDIR)
+                fprintf(stdout, " [directory] ");
+            else
+                fprintf(stdout, " [file] ");
+            
+
             
         }
     }
