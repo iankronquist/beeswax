@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <time.h>
 
 #define DEBUG 1
 
@@ -28,6 +29,8 @@ handle_events(int fd, int *wd, int argc, char* argv[])
     int i;
     ssize_t len;
     char *ptr;
+    time_t current_time;
+    current_time = time(&current_time);
     
     /* Loop while events can be read from inotify file descriptor. */
     
@@ -55,7 +58,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
         for (ptr = buf; ptr < buf + len;
              ptr += sizeof(struct inotify_event) + event->len)
         {
-            
+            fprintf(stdout,"Time: %s",ctime(&current_time));
             event = (const struct inotify_event *) ptr;
             
             /* Print event type */
