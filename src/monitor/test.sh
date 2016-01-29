@@ -15,3 +15,12 @@ echo "sample" > $CURDIR/sample.txt
 chmod -w $CURDIR/sample.txt
 rm -f $CURDIR/sample.txt
 
+echo "Testing JSON Validation"
+
+mkdir $CURDIR/temp\ dir
+touch $CURDIR/temp\ dir
+rmdir $CURDIR/temp\ dir
+
+echo "sample" > $CURDIR/sample\ \".txt
+rm -f $CURDIR/sample\ \".txt
+
