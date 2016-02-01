@@ -5,8 +5,19 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <time.h>
+#include <limits.h>
 
 #define DEBUG 1
+#define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s\",\"TYPE\":\"%s\"}"
+
+/*
+ *
+ */ 
+static void print_json()
+{
+	fprintf(stdout,JSON_OBJECT,"date","event","path","type");
+}
+
 
 /* Read all available inotify events from the file descriptor 'fd'.
  *          wd is the table of watch descriptors for the directories in argv.
@@ -67,43 +78,43 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             {
                 fprintf(stdout,"IN_ACCESS: ");
             }
-            if (IN_MODIFY & event->mask)
+            else if(IN_MODIFY & event->mask)
             {
                 fprintf(stdout,"IN_MODIFY: ");
             }
-            if (IN_ATTRIB & event->mask)
+            else if (IN_ATTRIB & event->mask)
             {
                 fprintf(stdout,"IN_ATTRIB: ");
             }
-            if (IN_CLOSE_WRITE & event->mask)
+            else if (IN_CLOSE_WRITE & event->mask)
             {
                 fprintf(stdout,"IN_CLOSE_WRITE: ");
             }
-            if (IN_CLOSE_NOWRITE & event->mask)
+            else if (IN_CLOSE_NOWRITE & event->mask)
             {
                 fprintf(stdout,"IN_CLOSE_NOWRITE: ");
             }
-            if (IN_OPEN & event->mask)
+            else if (IN_OPEN & event->mask)
             {
                 fprintf(stdout,"IN_OPEN: ");
             }
-            if (IN_MOVED_FROM & event->mask)
+            else if (IN_MOVED_FROM & event->mask)
             {
                 fprintf(stdout,"IN_MOVED_FROM: ");
             }
-            if (IN_MOVED_TO & event->mask)
+            else if (IN_MOVED_TO & event->mask)
             {
                 fprintf(stdout,"IN_MOVED_TO: ");
             }
-            if (IN_CREATE & event->mask)
+            else if (IN_CREATE & event->mask)
             {
                 fprintf(stdout,"IN_CREATE: ");
             }
-            if (IN_DELETE & event->mask)
+            else if (IN_DELETE & event->mask)
             {
                 fprintf(stdout,"IN_DELETE: ");
             }
-            if (IN_DELETE_SELF & event->mask)
+            else if (IN_DELETE_SELF & event->mask)
             {
                 fprintf(stdout,"IN_DELETE_SELF: ");
             }
@@ -259,5 +270,6 @@ main(int argc, char* argv[])
     close(fd);
     
     free(wd);
+print_json();
     exit(EXIT_SUCCESS);
 }
