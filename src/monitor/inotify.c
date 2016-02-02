@@ -13,17 +13,17 @@
 #define PATH_LIMIT PATH_MAX * 2 + 1 
 
 //Defined in limits.h
-const char one[]    = "IN_ACCESS";
-const char two[]    = "IN_MODIFY";
-const char four[]   = "IN_ATTRIB";
-const char eight[]  = "IN_CLOSE_WRITE";
-const char ten[]    = "IN_CLOSE_NOWRITE";
-const char twenty[] = "IN_OPEN";
-const char fourty[] = "IN_MOVED_FROM"
-const char eighty[] = "IN_MOVED_TO";
-const char one_hundo[]  = "IN_CREATE";
-const char two_hundo[] = "IN_DELETE";
-const char four_hundo[]  = "IN_DELETE_SELF";
+const char one*         = "IN_ACCESS";
+const char two*         = "IN_MODIFY";
+const char four*        = "IN_ATTRIB";
+const char eight*       = "IN_CLOSE_WRITE";
+const char ten*         = "IN_CLOSE_NOWRITE";
+const char twenty*      = "IN_OPEN";
+const char fourty*      = "IN_MOVED_FROM";
+const char eighty*      = "IN_MOVED_TO";
+const char one_hundo*   = "IN_CREATE";
+const char two_hundo*   = "IN_DELETE";
+const char four_hundo*  = "IN_DELETE_SELF";
 
 /*
  *
