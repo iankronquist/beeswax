@@ -11,9 +11,23 @@
 #define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s\",\"TYPE\":\"%s\"}"
 //Maximimum pathname, all escapes and 1 null terminating
 #define PATH_LIMIT PATH_MAX * 2 + 1 
+
+//Defined in limits.h
+const char one[]    = "IN_ACCESS";
+const char two[]    = "IN_MODIFY";
+const char four[]   = "IN_ATTRIB";
+const char eight[]  = "IN_CLOSE_WRITE";
+const char ten[]    = "IN_CLOSE_NOWRITE";
+const char twenty[] = "IN_OPEN";
+const char fourty[] = "IN_MOVED_FROM"
+const char eighty[] = "IN_MOVED_TO";
+const char hundo[]  = "IN_CREATE";
+const char thundo[] = "IN_DELETE";
+const char fundo[]  = "IN_DELETE_SELF";
+
 /*
  *
- */ 
+ */
 static void print_json(const char *name)
 {
 	char name_buffer[ PATH_LIMIT ];
@@ -44,6 +58,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
     int i;
     ssize_t len;
     char *ptr;
+    const char *mask_ptr = NULL;
     time_t current_time;
     current_time = time(&current_time);
     
@@ -80,7 +95,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             //Fix this section
             if (IN_ACCESS & event->mask)
             {
-                fprintf(stdout,"IN_ACCESS: ");
+                mask_ptr = one;
             }
             else if(IN_MODIFY & event->mask)
             {
