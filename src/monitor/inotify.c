@@ -9,13 +9,17 @@
 
 #define DEBUG 1
 #define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s\",\"TYPE\":\"%s\"}"
-
+//Maximimum pathname, all escapes and 1 null terminating
+#define PATH_LIMIT PATH_MAX * 2 + 1 
 /*
  *
  */ 
-static void print_json()
+static void print_json(const char *name)
 {
-	fprintf(stdout,JSON_OBJECT,"date","event","path","type");
+	char name_buffer[ PATH_LIMIT ];
+	name_buffer[0] = '\0';
+
+	fprintf(stdout,JSON_OBJECT,"date","event",name,"type");
 }
 
 
@@ -126,11 +130,11 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             {
                 fprintf(stdout,"IN_MOVE: ");
             }*/
-            if(DEBUG)
+/*            if(DEBUG)
             {
                 fprintf(stdout, "UMASK: %X", event->mask);
             }
-        
+  */      
 	    /* Once DELETE_SELF -> quit
 	    */
             /* Print the name of the watched directory */
@@ -156,7 +160,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 fprintf(stdout, " [file] \n");
             
 
-            
+            print_json(event->name);
         }
     }
 }
@@ -270,6 +274,5 @@ main(int argc, char* argv[])
     close(fd);
     
     free(wd);
-print_json();
     exit(EXIT_SUCCESS);
 }
