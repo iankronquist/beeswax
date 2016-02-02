@@ -21,9 +21,9 @@ const char ten[]    = "IN_CLOSE_NOWRITE";
 const char twenty[] = "IN_OPEN";
 const char fourty[] = "IN_MOVED_FROM"
 const char eighty[] = "IN_MOVED_TO";
-const char hundo[]  = "IN_CREATE";
-const char thundo[] = "IN_DELETE";
-const char fundo[]  = "IN_DELETE_SELF";
+const char one_hundo[]  = "IN_CREATE";
+const char two_hundo[] = "IN_DELETE";
+const char four_hundo[]  = "IN_DELETE_SELF";
 
 /*
  *
@@ -95,47 +95,47 @@ handle_events(int fd, int *wd, int argc, char* argv[])
             //Fix this section
             if (IN_ACCESS & event->mask)
             {
-                mask_ptr = one;
+                mask_ptr = &one;
             }
             else if(IN_MODIFY & event->mask)
             {
-                fprintf(stdout,"IN_MODIFY: ");
+                mask_ptr = &two;
             }
             else if (IN_ATTRIB & event->mask)
             {
-                fprintf(stdout,"IN_ATTRIB: ");
+                mask_ptr = &four;
             }
             else if (IN_CLOSE_WRITE & event->mask)
             {
-                fprintf(stdout,"IN_CLOSE_WRITE: ");
+                mask_ptr = &eight;
             }
             else if (IN_CLOSE_NOWRITE & event->mask)
             {
-                fprintf(stdout,"IN_CLOSE_NOWRITE: ");
+                mask_ptr = &ten;
             }
             else if (IN_OPEN & event->mask)
             {
-                fprintf(stdout,"IN_OPEN: ");
+                mask_ptr = &twenty;
             }
             else if (IN_MOVED_FROM & event->mask)
             {
-                fprintf(stdout,"IN_MOVED_FROM: ");
+                mask_ptr = &fourty;
             }
             else if (IN_MOVED_TO & event->mask)
             {
-                fprintf(stdout,"IN_MOVED_TO: ");
+                mask_ptr = &eighty;
             }
             else if (IN_CREATE & event->mask)
             {
-                fprintf(stdout,"IN_CREATE: ");
+                mask_ptr = &one_hundo;
             }
             else if (IN_DELETE & event->mask)
             {
-                fprintf(stdout,"IN_DELETE: ");
+                mask_ptr = &two_hundo;
             }
             else if (IN_DELETE_SELF & event->mask)
             {
-                fprintf(stdout,"IN_DELETE_SELF: ");
+                mask_ptr = &four_hundo;
             }
             /*if (IN_CLOSE & event->mask)
             {
