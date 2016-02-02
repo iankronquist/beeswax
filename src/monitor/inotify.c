@@ -13,27 +13,27 @@
 #define PATH_LIMIT PATH_MAX * 2 + 1 
 
 //Defined in limits.h
-const char one*         = "IN_ACCESS";
-const char two*         = "IN_MODIFY";
-const char four*        = "IN_ATTRIB";
-const char eight*       = "IN_CLOSE_WRITE";
-const char ten*         = "IN_CLOSE_NOWRITE";
-const char twenty*      = "IN_OPEN";
-const char fourty*      = "IN_MOVED_FROM";
-const char eighty*      = "IN_MOVED_TO";
-const char one_hundo*   = "IN_CREATE";
-const char two_hundo*   = "IN_DELETE";
-const char four_hundo*  = "IN_DELETE_SELF";
+const char *one         = "IN_ACCESS";
+const char *two         = "IN_MODIFY";
+const char *four        = "IN_ATTRIB";
+const char *eight       = "IN_CLOSE_WRITE";
+const char *ten         = "IN_CLOSE_NOWRITE";
+const char *twenty      = "IN_OPEN";
+const char *fourty      = "IN_MOVED_FROM";
+const char *eighty      = "IN_MOVED_TO";
+const char *one_hundo   = "IN_CREATE";
+const char *two_hundo   = "IN_DELETE";
+const char *four_hundo  = "IN_DELETE_SELF";
 
 /*
  *
  */
-static void print_json(const char *name)
+static void print_json(const char * date, const char * event, const char *name)
 {
 	char name_buffer[ PATH_LIMIT ];
 	name_buffer[0] = '\0';
 
-	fprintf(stdout,JSON_OBJECT,"date","event",name,"type");
+	fprintf(stdout,JSON_OBJECT,date,event,name,"type");
 }
 
 
@@ -59,9 +59,13 @@ handle_events(int fd, int *wd, int argc, char* argv[])
     ssize_t len;
     char *ptr;
     const char *mask_ptr = NULL;
+    char buffer[80];
     time_t current_time;
+    struct tm * string_time = NULL; 
+
     current_time = time(&current_time);
-    
+    string_time = localtime(&current_time); 
+    strftime(buffer,80,"%c",string_time);
     /* Loop while events can be read from inotify file descriptor. */
     
     for (;;)
@@ -88,54 +92,54 @@ handle_events(int fd, int *wd, int argc, char* argv[])
         for (ptr = buf; ptr < buf + len;
              ptr += sizeof(struct inotify_event) + event->len)
         {
-            fprintf(stdout,"Time: %s",ctime(&current_time));
+            //fprintf(stdout,"Time: %s",ctime(&current_time));
             event = (const struct inotify_event *) ptr;
             
             /* Print event type */
             //Fix this section
             if (IN_ACCESS & event->mask)
             {
-                mask_ptr = &one;
+                mask_ptr = one;
             }
             else if(IN_MODIFY & event->mask)
             {
-                mask_ptr = &two;
+                mask_ptr = two;
             }
             else if (IN_ATTRIB & event->mask)
             {
-                mask_ptr = &four;
+                mask_ptr = four;
             }
             else if (IN_CLOSE_WRITE & event->mask)
             {
-                mask_ptr = &eight;
+                mask_ptr = eight;
             }
             else if (IN_CLOSE_NOWRITE & event->mask)
             {
-                mask_ptr = &ten;
+                mask_ptr = ten;
             }
             else if (IN_OPEN & event->mask)
             {
-                mask_ptr = &twenty;
+                mask_ptr = twenty;
             }
             else if (IN_MOVED_FROM & event->mask)
             {
-                mask_ptr = &fourty;
+                mask_ptr = fourty;
             }
             else if (IN_MOVED_TO & event->mask)
             {
-                mask_ptr = &eighty;
+                mask_ptr = eighty;
             }
             else if (IN_CREATE & event->mask)
             {
-                mask_ptr = &one_hundo;
+                mask_ptr = one_hundo;
             }
             else if (IN_DELETE & event->mask)
             {
-                mask_ptr = &two_hundo;
+                mask_ptr = two_hundo;
             }
             else if (IN_DELETE_SELF & event->mask)
             {
-                mask_ptr = &four_hundo;
+                mask_ptr = four_hundo;
             }
             /*if (IN_CLOSE & event->mask)
             {
@@ -175,7 +179,7 @@ handle_events(int fd, int *wd, int argc, char* argv[])
                 fprintf(stdout, " [file] \n");
             
 
-            print_json(event->name);
+            print_json(buffer,mask_ptr,event->name);
         }
     }
 }
