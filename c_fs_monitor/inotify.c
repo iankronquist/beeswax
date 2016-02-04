@@ -205,6 +205,7 @@ handle_events(int fd, int *wd, int argc,char *safe_array[])
             print_json(buffer,mask_ptr,directory,event->name,type_ptr);
         }
     }
+    fflush(stdout);
 }
 
 int
@@ -223,7 +224,6 @@ main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     }
     
-    fprintf(stdout, "Press ENTER key to terminate.\n");
     
     /* Create the file descriptor for accessing the inotify API */
     
@@ -261,17 +261,12 @@ main(int argc, char* argv[])
     
     /* Prepare for polling */
     
-    nfds = 2;
-    
-    /* Console input */
-    
-    fds[0].fd = STDIN_FILENO;
-    fds[0].events = POLLIN;
+    nfds = 1;
     
     /* Inotify input */
     
-    fds[1].fd = fd;
-    fds[1].events = POLLIN;
+    fds[0].fd = fd;
+    fds[0].events = POLLIN;
     
     /* Creating JSON safe directory */
     safe_array = malloc((argc) * sizeof(char*));
@@ -283,7 +278,7 @@ main(int argc, char* argv[])
 	
     /* Wait for events and/or terminal input */
     
-    fprintf(stdout, "Listening for events.\n");
+    fprintf(stderr, "Listening for events.\n");
     while (1)
     {
         poll_num = poll(fds, nfds, -1);
@@ -297,18 +292,8 @@ main(int argc, char* argv[])
         
         if (poll_num > 0)
         {
-            
+
             if (fds[0].revents & POLLIN)
-            {
-                
-                /* Console input is available. Empty stdin and quit */
-                
-                while (read(STDIN_FILENO, &buf, 1) > 0 && buf != '\n')
-                    continue;
-                break;
-            }
-            
-            if (fds[1].revents & POLLIN)
             {
                 
                 /* Inotify events are available */
