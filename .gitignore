@@ -4,3 +4,4 @@ senior-project-experiment
 
 c_fs_monitor/inotify
 c_fs_monitor/test_fs_monitor
+.DS_Store
