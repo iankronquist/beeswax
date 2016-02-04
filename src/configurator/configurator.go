@@ -61,14 +61,18 @@ func ReadConfig(fileName string) (Config, error) {
 }
 
 func StartMonitor(c Config) {
-	fmt.Println("adfasdf")
 	FSMessages := make(chan string)
 	//networkMessages := make(chan string)
 	//execMessages := make(chan string)
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
 
-	fsMonitor.Start(FSMessages)
-	//go fsMonitor.Start(FSMessages)
+	go fsMonitor.Start(FSMessages)
+	for {
+		select {
+			case message := <-FSMessages:
+				fmt.Println("Message received: ", message)
+		}
+	}
 	/*
 		go monitor.StartNetWorkMonitor(networkMessages)
 		go monitor.StartExecMonitor(execMessages)
