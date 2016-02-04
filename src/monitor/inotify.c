@@ -30,9 +30,9 @@ static void json_safe(const char * source, char * destination, int size)
 {
 	int l = 0;
 	int k = 0;
-	for( ; k< size && l < PATH_LIMIT; k++)
+	for( ; k<= size && l < PATH_LIMIT; k++)
 	{
-		if(source[k] == '"' || source[k] == 13)
+		if(source[k] == '"' || source[k] == '\n')
 		{
 			destination[l++] = '\'';
 			destination[l++] = source[k];
@@ -42,7 +42,7 @@ static void json_safe(const char * source, char * destination, int size)
 			destination[l++] = source[k];
 		}
 	}
-fprintf(stdout,"Function: \tSource: %s\n\tDestination: %s\n", source, destination);
+fprintf(stdout,"Function: \tSource: %s\n\tDestination: \n", source ); fprintf(stdout,"Function: \tSource: \n\tDestination: %s\n", destination);
 }
 /*
  *
@@ -198,7 +198,7 @@ handle_events(int fd, int *wd, int argc, char* argv[],char **safe_array)
 //            else
 //                fprintf(stdout, " [file] \n");
             
-
+		printf("%d %s %s\n", i, safe_array[i], directory);
             print_json(buffer,mask_ptr,directory,event->name);
         }
     }
@@ -271,8 +271,8 @@ main(int argc, char* argv[])
     fds[1].events = POLLIN;
     
     /* Creating JSON safe directory */
-    safe_array = malloc(argc * sizeof(char*));
-    for(i = 0,j = 1; i < argc; i++,j++)
+    safe_array = malloc((argc) * sizeof(char*));
+    for(i = 0,j = 1; i < argc - 1; i++,j++)
     {
 	safe_array[i] = malloc(PATH_LIMIT * sizeof(char));
 	json_safe(argv[j],safe_array[i],strlen(argv[j]));
