@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/iankronquist/senior-project-experiment/src/configurator"
-	_"github.com/iankronquist/senior-project-experiment/src/monitor"
-	_"github.com/iankronquist/senior-project-experiment/src/filter"
-	_"github.com/iankronquist/senior-project-experiment/src/reporter"
+	_ "github.com/iankronquist/senior-project-experiment/src/filter"
+	_ "github.com/iankronquist/senior-project-experiment/src/monitor"
+	_ "github.com/iankronquist/senior-project-experiment/src/reporter"
 )
 
 func main() {
@@ -16,4 +16,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	configurator.StartMonitor(config)
 }

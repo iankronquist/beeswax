@@ -1,4 +1,5 @@
 {
+  "monitor process name": "c_fs_monitor/test_fs_monitor",
   "docker compose name": "docker-compose",
   "container names": ["mysql", "wordpress"]
 }
