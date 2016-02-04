@@ -9,7 +9,7 @@
 #include <limits.h>
 
 #define DEBUG 1
-#define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"TYPE\":\"%s\"}"
+#define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"TYPE\":\"%s\"}\n"
 //Maximimum pathname, all escapes and 1 null terminating
 #define PATH_LIMIT PATH_MAX * 2 + 1 
 
@@ -25,6 +25,8 @@ const char *eighty      = "IN_MOVED_TO";
 const char *one_hundo   = "IN_CREATE";
 const char *two_hundo   = "IN_DELETE";
 const char *four_hundo  = "IN_DELETE_SELF";
+const char *folder	= "FOLDER";
+const char *file	= "FILE";
 
 static void json_safe(const char * source, char * destination, int size)
 {
@@ -34,7 +36,7 @@ static void json_safe(const char * source, char * destination, int size)
 	{
 		if(source[k] == '"' || source[k] == '\n')
 		{
-			destination[l++] = '\'';
+			destination[l++] = '\\';
 			destination[l++] = source[k];
 		}
 		else
@@ -42,17 +44,16 @@ static void json_safe(const char * source, char * destination, int size)
 			destination[l++] = source[k];
 		}
 	}
-fprintf(stdout,"Function: \tSource: %s\n\tDestination: \n", source ); fprintf(stdout,"Function: \tSource: \n\tDestination: %s\n", destination);
 }
 /*
  *
  */
-static void print_json(const char * date, const char * event,const char *directory, const char *name)
+static void print_json(const char * date, const char * event,const char *directory, const char *name, const char *type)
 {
-	char name_buffer[ PATH_LIMIT ];
-	name_buffer[0] = '\0';
-fprintf(stdout,"%s\n",directory);
-	//fprintf(stdout,JSON_OBJECT,date,event,directory,name,"type");
+	char safe_name[NAME_MAX *2 +1];
+
+	json_safe(name,safe_name,strlen(name));
+	fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
 }
 
 
@@ -63,7 +64,7 @@ fprintf(stdout,"%s\n",directory);
  *                                         Entry 0 of wd and argv is unused. */
 
 static void
-handle_events(int fd, int *wd, int argc, char* argv[],char **safe_array)
+handle_events(int fd, int *wd, int argc,char *safe_array[])
 {
     /* Some systems cannot read integer variables if they are not
      *               properly aligned. On other systems, incorrect alignment may
@@ -78,7 +79,8 @@ handle_events(int fd, int *wd, int argc, char* argv[],char **safe_array)
     ssize_t len;
     char *ptr;
     const char *mask_ptr = NULL;
-    const char *directory = NULL;
+    const char *type_ptr = NULL;
+    char *directory = NULL;
     char buffer[80];
     time_t current_time;
     struct tm * string_time = NULL; 
@@ -87,7 +89,6 @@ handle_events(int fd, int *wd, int argc, char* argv[],char **safe_array)
     string_time = localtime(&current_time); 
     strftime(buffer,80,"%c",string_time);
     /* Loop while events can be read from inotify file descriptor. */
-    
     for (;;)
     {
         
@@ -178,11 +179,11 @@ handle_events(int fd, int *wd, int argc, char* argv[],char **safe_array)
 	    */
             /* Print the name of the watched directory */
             
-            for (i = 1; i < argc; ++i)
+            for (i = 0; i < argc; ++i)
             {
                 if (wd[i] == event->wd)
                 {
-                    directory = safe_array[i];
+                    directory = safe_array[i-1];
                     break;
                 }
             }
@@ -193,13 +194,15 @@ handle_events(int fd, int *wd, int argc, char* argv[],char **safe_array)
 //                fprintf(stdout, "%s", event->name);
             /* Print type of filesystem object */
             
-//            if (event->mask & IN_ISDIR)
-//                fprintf(stdout, " [directory] \n");
-//            else
-//                fprintf(stdout, " [file] \n");
-            
-		printf("%d %s %s\n", i, safe_array[i], directory);
-            print_json(buffer,mask_ptr,directory,event->name);
+            if (event->mask & IN_ISDIR)
+	    {
+		type_ptr = folder;
+	    }
+            else
+            {
+		type_ptr = file;
+            }
+            print_json(buffer,mask_ptr,directory,event->name,type_ptr);
         }
     }
 }
@@ -276,7 +279,6 @@ main(int argc, char* argv[])
     {
 	safe_array[i] = malloc(PATH_LIMIT * sizeof(char));
 	json_safe(argv[j],safe_array[i],strlen(argv[j]));
-fprintf(stdout,"Source: %s\nDestination: %s\n", argv[j],safe_array[i]);
     }
 	
     /* Wait for events and/or terminal input */
@@ -311,7 +313,7 @@ fprintf(stdout,"Source: %s\nDestination: %s\n", argv[j],safe_array[i]);
                 
                 /* Inotify events are available */
                 
-                handle_events(fd, wd, argc, argv,safe_array);
+                handle_events(fd, wd, argc, safe_array);
             }
         }
     }
