@@ -8,6 +8,9 @@ senior-project-experiment: main.go src/
 c_fs_monitor/test_fs_monitor: c_fs_monitor/test_fs_monitor.c
 	${CC} -o c_fs_monitor/test_fs_monitor c_fs_monitor/test_fs_monitor.c
 
+c_fs_monitor/inotify: c_fs_monitor/inotify.c
+	${CC} -o c_fs_monitor/inotify c_fs_monitor/inotify.c
+
 test: c_fs_monitor/test_fs_monitor
 	go test ./src/configurator
 	go test ./src/monitor
