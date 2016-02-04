@@ -52,8 +52,14 @@ static void json_safe(const char * source, char * destination, int size)
 static void print_json(const char * date, const char * event,const char *directory, const char *name, const char *type)
 {
     char safe_name[NAME_MAX *2 +1];
-    
-    json_safe(name,safe_name,strlen(name));
+    if(strcmp(type,folder_cstring) == 0)
+    {
+	safe_name[0] = '\0';
+    }		 
+    else
+    {
+	json_safe(name,safe_name,strlen(name));
+    }
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
 }
 
@@ -203,7 +209,6 @@ handle_events(int fd, int *wd, int argc,char *safe_array[])
 int
 main(int argc, char* argv[])
 {
-    char buf;
     char **safe_array;
     int fd, i,j, poll_num;
     int *wd;
