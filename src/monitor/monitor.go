@@ -2,7 +2,6 @@ package monitor
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -35,7 +34,7 @@ type FSMonitor struct {
  */
 func (m FSMonitor) getDockerFSDirectory() string {
 	// Sibi is writing this bit
-	return "/"
+	return "/home/vagrant"
 }
 
 /* Start the process running on the honeypot host to monitor the Docker
@@ -45,7 +44,6 @@ func (m FSMonitor) getDockerFSDirectory() string {
  * the output of the process on to the messages channel.
  */
 func (m FSMonitor) Start(messages chan<- string) {
-	fmt.Println(m.MonitorName)
 	m.DockerDir = m.getDockerFSDirectory()
 	m.fsWatcherProc = exec.Command(m.MonitorName, m.DockerDir)
 	defer m.fsWatcherProc.Wait()
@@ -65,7 +63,6 @@ func (m FSMonitor) Start(messages chan<- string) {
 	go io.Copy(os.Stderr, stderr)
 
 	m.fsWatcherProc.Start()
-	fmt.Println(m.MonitorName)
 
 	stdoutReader := bufio.NewReader(outpipe)
 	for {
