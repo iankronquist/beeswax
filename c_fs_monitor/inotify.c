@@ -8,10 +8,10 @@
 #include <time.h>
 #include <limits.h>
 
-#define DEBUG 1
 #define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"TYPE\":\"%s\"}\n"
 // Maximimum pathname, all escapes and 1 null terminator
 #define PATH_LIMIT PATH_MAX * 2 + 1
+#define TIME_OUTPUT "%c"
 
 // Defined in limits.h
 const char *in_access_cstring           = "IN_ACCESS";
@@ -46,9 +46,9 @@ static void json_safe(const char * source, char * destination, int size)
     }
 }
 
-/*
- *
- */
+/*  Print a JSON object as defined by JSON_OBJECT
+ *  Takes c style strings only, takes JSON safe directory name
+ *  Takes unsafe file name and makes it safe. */
 static void print_json(const char * date, const char * event,const char *directory, const char *name, const char *type)
 {
     char safe_name[NAME_MAX *2 +1];
@@ -86,7 +86,7 @@ handle_events(int fd, int *wd, int argc,char *safe_array[])
     
     current_time = time(&current_time);
     string_time = localtime(&current_time);
-    strftime(buffer,80,"%c",string_time);
+    strftime(buffer,80,TIME_OUTPUT,string_time);
     /* Loop while events can be read from inotify file descriptor. */
     for (;;)
     {
@@ -167,11 +167,6 @@ handle_events(int fd, int *wd, int argc,char *safe_array[])
              {
              fprintf(stdout,"IN_MOVE: ");
              }*/
-            /*            if(DEBUG)
-             {
-             fprintf(stdout, "UMASK: %X", event->mask);
-             }
-             */
             /* Once DELETE_SELF -> quit
              */
             /* Print the name of the watched directory */
