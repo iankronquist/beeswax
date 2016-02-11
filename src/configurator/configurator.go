@@ -15,6 +15,10 @@ type Config struct {
 	DockerComposeName string   `json:"docker compose name"`
 	MonitorName       string   `json:"monitor process name"`
 	Containers        []string `json:"container names"`
+	MHNHost           string `json:"mhn host"`
+	MHNPort           string `json:"mhn port"`
+	MHNIdent string `json:"mhn identifier"`
+	MHNAuth string `json:"mhn authorization"`
 }
 
 func StartContainers(c Config) error {
