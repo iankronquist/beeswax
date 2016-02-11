@@ -66,7 +66,7 @@ func StartMonitor(c Config) {
 	//execMessages := make(chan string)
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
 
-	go fsMonitor.Start(FSMessages)
+	go fsMonitor.Start(FSMessages, c.DockerComposeName)
 	for {
 		select {
 			case message := <-FSMessages:
