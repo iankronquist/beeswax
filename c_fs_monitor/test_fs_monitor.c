@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 int main (int argc, char **argv) {
-    if (argc != 2) {
+    if (argc < 2) {
         fprintf(stderr, "Not enough arguments");
         exit(EXIT_FAILURE);
     }
