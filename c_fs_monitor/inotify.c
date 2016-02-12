@@ -28,6 +28,9 @@ const char *in_delete_self_cstring      = "IN_DELETE_SELF";
 const char *folder_cstring              = "FOLDER";
 const char *file_cstring                = "FILE";
 
+/* Takes two c strings and copies source into destination string
+ * inserting JSON escape sequences to make it JSON safe
+ */ 
 static void json_safe(const char * source, char * destination, int size)
 {
     int l = 0;
