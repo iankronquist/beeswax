@@ -5,7 +5,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"fmt"
+	_"io/ioutil"
 	"os/exec"
+	_"regexp"
 )
 
 /* The Monitor interface defines a series of methods which will be defined on
@@ -14,27 +17,85 @@ import (
  * performing the actual monitoring.
  */
 type Monitor interface {
-	Start(messages chan<- string)
+	Start(messages chan<- []byte, dockerComposeName string)
 	Stop()
 }
 
 /* Store the MonitorName, which is the name of the program to execute, the
- * DockerDir which is the directory to monitor which our Docker containers of
- * interest live in, and a pointer to the exec.Cmd struct which describes the
- * running command.
+ * DockerDirs which are the directories to monitor which our Docker containers
+ * of interest live in, and a pointer to the exec.Cmd struct which describes
+ * the running command.
  */
 type FSMonitor struct {
 	MonitorName   string
-	DockerDir     string
+	DockerDirs     []string
 	fsWatcherProc *exec.Cmd
 }
 
 /* This function is going to need some comments describing why we chose this
  * approach, because it will be hairy.
+ * FIXME: Break out functionality into multiple functions so we can test this
+ * easily!
  */
-func (m FSMonitor) getDockerFSDirectory() string {
-	// Sibi is writing this bit
-	return "/home/vagrant"
+func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
+	dockerComposeCommand := exec.Command(dockerComposeName, "ps", "-q")
+	outpipe, err := dockerComposeCommand.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	dockerComposeCommand.Start()
+	defer dockerComposeCommand.Wait()
+
+	ids := []string{}
+	stdoutReader := bufio.NewReader(outpipe)
+	for {
+		line, _, err := stdoutReader.ReadLine()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		if string(line) != "" {
+			ids = append(ids, string(line))
+		}
+	}
+
+/*
+	dockerInfoCommand := exec.Command("docker", "info")
+	infoOutPipe, err := dockerInfoCommand.StdoutPipe()
+
+	if err != nil {
+		panic(err)
+	}
+
+	dockerInfoCommand.Start()
+	defer dockerInfoCommand.Wait()
+
+	infoBuf, err := ioutil.ReadAll(infoOutPipe)
+
+	if err != nil {
+		panic(err)
+	}
+
+	info := string(infoBuf)
+
+	re := regexp.MustCompile("Docker Root Dir: (.*)")
+
+	submatch := re.FindStringSubmatch(info)
+
+	if len(submatch) < 2 {
+		fmt.Println(submatch, info)
+		panic("Couldn't find the docker root directory")
+	}
+	dockerRootPath := submatch[1]
+	*/
+	dockerRootPath := "/var/lib/docker/aufs"
+
+	for i := 0; i < len(ids); i++ {
+		ids[i] = dockerRootPath + "/mnt/" + ids[i]
+	}
+	return ids
 }
 
 /* Start the process running on the honeypot host to monitor the Docker
@@ -43,22 +104,21 @@ func (m FSMonitor) getDockerFSDirectory() string {
  * store it in the struct. Then create and start the process and forward
  * the output of the process on to the messages channel.
  */
-func (m FSMonitor) Start(messages chan<- string) {
-	m.DockerDir = m.getDockerFSDirectory()
-	m.fsWatcherProc = exec.Command(m.MonitorName, m.DockerDir)
+func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
+	m.DockerDirs = m.getDockerFSDirectory(dockerComposeName)
+	fmt.Println(m.MonitorName)
+	m.fsWatcherProc = exec.Command(m.MonitorName, m.DockerDirs...)
 	defer m.fsWatcherProc.Wait()
 
 	outpipe, err := m.fsWatcherProc.StdoutPipe()
 	if err != nil {
 		log.Println("Could not open the ", m.MonitorName, "stdout pipe")
 		panic(err)
-		return
 	}
 	stderr, err := m.fsWatcherProc.StderrPipe()
 	if err != nil {
 		log.Println("Could not open the ", m.MonitorName, "stderr pipe")
 		panic(err)
-		return
 	}
 	go io.Copy(os.Stderr, stderr)
 
@@ -70,7 +130,7 @@ func (m FSMonitor) Start(messages chan<- string) {
 		if err != nil {
 			panic(err)
 		}
-		sb := string(line)
+		sb := line
 		messages <- sb
 
 	}

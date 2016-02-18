@@ -5,7 +5,7 @@ import (
 )
 
 type FilterConfig struct {
-	ignore []string `json:"ignore"`
+	Ignore []string `json:"ignore"`
 }
 
 func GetFilterConfig(fileName string) (FilterConfig, error) {
@@ -21,12 +21,12 @@ func GetFilterConfig(fileName string) (FilterConfig, error) {
 	If there is an error, return it.
 	*/
 	// Dummy implementation for testing. Remove later
-	newFilterConf := FilterConfig{ignore: []string{"/dev/"}}
+	newFilterConf := FilterConfig{Ignore: []string{"/dev/"}}
 	return newFilterConf, nil
 }
 
 type Filter interface {
-	Start(c FilterConfig, sending chan<- string, receiving <-chan string)
+	Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte)
 }
 
 type FSFilter struct { }
@@ -40,17 +40,25 @@ type ZachsInotifyData struct {
 	Type	 string `json:"TYPE"`
 }
 
-func (f FSFilter) Start (c FilterConfig, sending chan<- string, receiving <-chan string){
+func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
+
+	fsFilter := FSFilter{}
+	conf := FilterConfig{Ignore: []string{"/dev/"}}
+	go fsFilter.Start(conf, sending, receiving)
+
+}
+
+func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
 	for {
 		select {
 			case message := <-receiving:
 				zid := ZachsInotifyData{}
-				err := json.Unmarshal([]byte(message), &zid)
+				err := json.Unmarshal(message, &zid)
 				if err != nil {
 					panic(err)
 				}
 				notblacklisted := true
-				for _, i := range c.ignore {
+				for _, i := range c.Ignore {
 					if strings.HasPrefix(zid.FilePath,i) {
 						notblacklisted = false
 						break
@@ -64,7 +72,7 @@ func (f FSFilter) Start (c FilterConfig, sending chan<- string, receiving <-chan
 
 }
 
-func (N NOP) Start( c FilterConfig, sending chan<- string, receiving <-chan string){
+func (N NOP) Start( c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
 	for {
 		select{
 			case message := <- receiving:
