@@ -11,10 +11,8 @@
 /* This is to be put a fprintf statement with 5 strings. The path is 
  * represented by two strings, directory + file or directory name
  */ 
- #define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"T    YPE\":\"%s\"}\n"
-
+#define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"TYPE\":\"%s\"}\n"
 #define PATH_LIMIT PATH_MAX * 2 + 1
-
 #define TIME_OUTPUT "%c"
 
 /* Takes two c strings and copies source into destination string
@@ -43,8 +41,8 @@ void json_safe(const char * source, char * destination, int size)
             destination[l++] = source[k];
         }
     }
-	/* Just to be sure it's null terminated */
-	if(l < PATH_LIMIT)
+    /* Just to be sure it's null terminated */
+    if(l < PATH_LIMIT)
 	{
 		destination[l] = '\0';
 	}
