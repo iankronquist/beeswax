@@ -32,12 +32,18 @@ type FSMonitor struct {
 	fsWatcherProc *exec.Cmd
 }
 
-/* This function is going to need some comments describing why we chose this
- * approach, because it will be hairy.
- * FIXME: Break out functionality into multiple functions so we can test this
- * easily!
- */
-func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
+type NetMonitor struct {
+	MonitorName string
+	ContainerIds []string
+}
+
+// Memoize this. It's kind of expensive to get.
+var dockerContainerIds = []string{}
+
+func getDockerContainerIds(dockerComposeName string) []string {
+	if len(dockerContainerIds) != 0 {
+		return dockerContainerIds
+	}
 	dockerComposeCommand := exec.Command(dockerComposeName, "ps", "-q")
 	outpipe, err := dockerComposeCommand.StdoutPipe()
 	if err != nil {
@@ -60,7 +66,80 @@ func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
 			ids = append(ids, string(line))
 		}
 	}
+	dockerContainerIds = ids
+	return ids
+}
 
+func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
+	ids := getDockerContainerIds(dockerComposeName)
+	arguments := []string{"inspect", "-f", "'{{ .State.Pid }}'"}
+	arguments = append(arguments, ids...)
+	dockerComposeCommand := exec.Command("docker", arguments...)
+	outpipe, err := dockerComposeCommand.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	dockerComposeCommand.Start()
+	defer dockerComposeCommand.Wait()
+
+	procIds := []string{}
+	stdoutReader := bufio.NewReader(outpipe)
+	for {
+		line, _, err := stdoutReader.ReadLine()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		if string(line) != "" {
+			procIds = append(procIds, string(line))
+			err = setSymlink(string(line), "/var/run/netns/")
+			if err != nil {
+				panic(err)
+			}
+			go startIPProcess(messages, string(line), "tcpdump", "")
+		}
+	}
+}
+
+func startIPProcess(messages chan<- []byte, procId string, watcherName string,
+		watcherArgs... string) {
+	arguments := []string{"netns", "exec", procId, watcherName}
+	arguments = append(arguments, watcherArgs...)
+	netWatcherCommand := exec.Command("ip", arguments...)
+	outpipe, err := netWatcherCommand.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	netWatcherCommand.Start()
+	defer netWatcherCommand.Wait()
+
+	stdoutReader := bufio.NewReader(outpipe)
+	for {
+		line, _, err := stdoutReader.ReadLine()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		messages <- line
+	}
+}
+
+func setSymlink(procId string, destination string) error {
+	err := os.Symlink("/proc/" + procId + "/ns/net", "/var/run/netns/" + procId)
+	return err
+}
+
+/* This function is going to need some comments describing why we chose this
+ * approach, because it will be hairy.
+ * FIXME: Break out functionality into multiple functions so we can test this
+ * easily!
+ */
+func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
+	ids := getDockerContainerIds(dockerComposeName)
 	/*
 		dockerInfoCommand := exec.Command("docker", "info")
 		infoOutPipe, err := dockerInfoCommand.StdoutPipe()
