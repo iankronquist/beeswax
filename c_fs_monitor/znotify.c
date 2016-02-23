@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
  * Pre-Conditions: None
  * Post-Conditions: Prints help
 *************************************************************************/
-static int walker(const char *fpath, const struct stat *sb,int typeflags, struct FTW *tfwbuf)
+static int walker(const char *fpath, const struct stat *sb, int typeflags, struct FTW *tfwbuf)
 {
 	return 0;
 }
