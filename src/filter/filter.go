@@ -31,7 +31,7 @@ type Filter interface {
 
 type FSFilter struct { }
 
-type NOP struct { }
+type NOPFilter struct { }
 
 type ZachsInotifyData struct {
 	Date	 string `json:"DATE"`
@@ -42,7 +42,7 @@ type ZachsInotifyData struct {
 
 func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
 	fsFilter := FSFilter{}
-	nopFilter := NOP{}
+	nopFilter := NOPFilter{}
 	conf := FilterConfig{Ignore: []string{"/dev/"}}
 	link := make(chan []byte)
 	go fsFilter.Start(conf, link, receiving)
@@ -71,7 +71,7 @@ func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan
 
 }
 
-func (N NOP) Start( c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
+func (N NOPFilter) Start( c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
 	for {
 		message := <- receiving
 		sending <- message
