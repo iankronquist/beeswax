@@ -2,13 +2,13 @@ package monitor
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	_ "io/ioutil"
 	"log"
 	"os"
-	"fmt"
-	_"io/ioutil"
 	"os/exec"
-	_"regexp"
+	_ "regexp"
 )
 
 /* The Monitor interface defines a series of methods which will be defined on
@@ -28,16 +28,22 @@ type Monitor interface {
  */
 type FSMonitor struct {
 	MonitorName   string
-	DockerDirs     []string
+	DockerDirs    []string
 	fsWatcherProc *exec.Cmd
 }
 
-/* This function is going to need some comments describing why we chose this
- * approach, because it will be hairy.
- * FIXME: Break out functionality into multiple functions so we can test this
- * easily!
- */
-func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
+type NetMonitor struct {
+	MonitorName string
+	ContainerIds []string
+}
+
+// Memoize this. It's kind of expensive to get.
+var dockerContainerIds = []string{}
+
+func getDockerContainerIds(dockerComposeName string) []string {
+	if len(dockerContainerIds) != 0 {
+		return dockerContainerIds
+	}
 	dockerComposeCommand := exec.Command(dockerComposeName, "ps", "-q")
 	outpipe, err := dockerComposeCommand.StdoutPipe()
 	if err != nil {
@@ -60,35 +66,108 @@ func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
 			ids = append(ids, string(line))
 		}
 	}
+	dockerContainerIds = ids
+	return ids
+}
 
-/*
-	dockerInfoCommand := exec.Command("docker", "info")
-	infoOutPipe, err := dockerInfoCommand.StdoutPipe()
-
+func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
+	ids := getDockerContainerIds(dockerComposeName)
+	arguments := []string{"inspect", "-f", "'{{ .State.Pid }}'"}
+	arguments = append(arguments, ids...)
+	dockerComposeCommand := exec.Command("docker", arguments...)
+	outpipe, err := dockerComposeCommand.StdoutPipe()
 	if err != nil {
 		panic(err)
 	}
 
-	dockerInfoCommand.Start()
-	defer dockerInfoCommand.Wait()
+	dockerComposeCommand.Start()
+	defer dockerComposeCommand.Wait()
 
-	infoBuf, err := ioutil.ReadAll(infoOutPipe)
+	procIds := []string{}
+	stdoutReader := bufio.NewReader(outpipe)
+	for {
+		line, _, err := stdoutReader.ReadLine()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		if string(line) != "" {
+			procIds = append(procIds, string(line))
+			err = setSymlink(string(line), "/var/run/netns/")
+			if err != nil {
+				panic(err)
+			}
+			go startIPProcess(messages, string(line), "tcpdump", "")
+		}
+	}
+}
 
+func startIPProcess(messages chan<- []byte, procId string, watcherName string,
+		watcherArgs... string) {
+	arguments := []string{"netns", "exec", procId, watcherName}
+	arguments = append(arguments, watcherArgs...)
+	netWatcherCommand := exec.Command("ip", arguments...)
+	outpipe, err := netWatcherCommand.StdoutPipe()
 	if err != nil {
 		panic(err)
 	}
 
-	info := string(infoBuf)
+	netWatcherCommand.Start()
+	defer netWatcherCommand.Wait()
 
-	re := regexp.MustCompile("Docker Root Dir: (.*)")
-
-	submatch := re.FindStringSubmatch(info)
-
-	if len(submatch) < 2 {
-		fmt.Println(submatch, info)
-		panic("Couldn't find the docker root directory")
+	stdoutReader := bufio.NewReader(outpipe)
+	for {
+		line, _, err := stdoutReader.ReadLine()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+		messages <- line
 	}
-	dockerRootPath := submatch[1]
+}
+
+func setSymlink(procId string, destination string) error {
+	err := os.Symlink("/proc/" + procId + "/ns/net", "/var/run/netns/" + procId)
+	return err
+}
+
+/* This function is going to need some comments describing why we chose this
+ * approach, because it will be hairy.
+ * FIXME: Break out functionality into multiple functions so we can test this
+ * easily!
+ */
+func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
+	ids := getDockerContainerIds(dockerComposeName)
+	/*
+		dockerInfoCommand := exec.Command("docker", "info")
+		infoOutPipe, err := dockerInfoCommand.StdoutPipe()
+
+		if err != nil {
+			panic(err)
+		}
+
+		dockerInfoCommand.Start()
+		defer dockerInfoCommand.Wait()
+
+		infoBuf, err := ioutil.ReadAll(infoOutPipe)
+
+		if err != nil {
+			panic(err)
+		}
+
+		info := string(infoBuf)
+
+		re := regexp.MustCompile("Docker Root Dir: (.*)")
+
+		submatch := re.FindStringSubmatch(info)
+
+		if len(submatch) < 2 {
+			fmt.Println(submatch, info)
+			panic("Couldn't find the docker root directory")
+		}
+		dockerRootPath := submatch[1]
 	*/
 	dockerRootPath := "/var/lib/docker/aufs"
 

@@ -1,4 +1,5 @@
 package filter
+
 import (
 	"encoding/json"
 	"strings"
@@ -29,55 +30,50 @@ type Filter interface {
 	Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte)
 }
 
-type FSFilter struct { }
+type FSFilter struct{}
 
-type NOP struct { }
+type NOPFilter struct{}
 
 type ZachsInotifyData struct {
-	Date	 string `json:"DATE"`
-	Event	 string `json:"EVENT"`
+	Date     string `json:"DATE"`
+	Event    string `json:"EVENT"`
 	FilePath string `json:"PATH"`
-	Type	 string `json:"TYPE"`
+	Type     string `json:"TYPE"`
 }
 
 func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
-
 	fsFilter := FSFilter{}
+	nopFilter := NOPFilter{}
 	conf := FilterConfig{Ignore: []string{"/dev/"}}
-	go fsFilter.Start(conf, sending, receiving)
-
+	link := make(chan []byte)
+	go fsFilter.Start(conf, link, receiving)
+	go nopFilter.Start(conf, sending, link)
 }
 
-func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
+func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
-		select {
-			case message := <-receiving:
-				zid := ZachsInotifyData{}
-				err := json.Unmarshal(message, &zid)
-				if err != nil {
-					panic(err)
-				}
-				notblacklisted := true
-				for _, i := range c.Ignore {
-					if strings.HasPrefix(zid.FilePath,i) {
-						notblacklisted = false
-						break
-					}
-				}
-				if notblacklisted {
-					sending <- message
-				}
+		message := <-receiving
+		zid := ZachsInotifyData{}
+		err := json.Unmarshal(message, &zid)
+		if err != nil {
+			panic(err)
+		}
+		notblacklisted := true
+		for _, i := range c.Ignore {
+			if strings.HasPrefix(zid.FilePath, i) {
+				notblacklisted = false
+				break
+			}
+		}
+		if notblacklisted {
+			sending <- message
 		}
 	}
-
 }
 
-func (N NOP) Start( c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
+func (N NOPFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
-		select{
-			case message := <- receiving:
-				sending <- message
-		}
+		message := <-receiving
+		sending <- message
 	}
-
 }

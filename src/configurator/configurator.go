@@ -2,10 +2,10 @@ package configurator
 
 import (
 	"encoding/json"
-	"github.com/iankronquist/senior-project-experiment/src/monitor"
-	"github.com/iankronquist/senior-project-experiment/src/filter"
-	"io"
 	"fmt"
+	"github.com/iankronquist/senior-project-experiment/src/filter"
+	"github.com/iankronquist/senior-project-experiment/src/monitor"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -68,12 +68,10 @@ func StartMonitor(c Config) {
 	//execMessages := make(chan string)
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
 	go fsMonitor.Start(FSMessages, c.DockerComposeName)
-	go filter.StartFilterStream(FSMessages, FSMessagesOut)
+	go filter.StartFilterStream(FSMessagesOut, FSMessages)
 	for {
-		select {
-			case message := <-FSMessages:
-				fmt.Println("Message received: ", message)
-		}
+		message := <-FSMessagesOut
+		fmt.Println("Message received: ", string(message))
 	}
 	/*
 		go monitor.StartNetWorkMonitor(networkMessages)
