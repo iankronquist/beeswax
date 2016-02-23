@@ -1,4 +1,5 @@
 package filter
+
 import (
 	"encoding/json"
 	"strings"
@@ -29,15 +30,15 @@ type Filter interface {
 	Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte)
 }
 
-type FSFilter struct { }
+type FSFilter struct{}
 
-type NOPFilter struct { }
+type NOPFilter struct{}
 
 type ZachsInotifyData struct {
-	Date	 string `json:"DATE"`
-	Event	 string `json:"EVENT"`
+	Date     string `json:"DATE"`
+	Event    string `json:"EVENT"`
 	FilePath string `json:"PATH"`
-	Type	 string `json:"TYPE"`
+	Type     string `json:"TYPE"`
 }
 
 func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
@@ -49,7 +50,7 @@ func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
 	go nopFilter.Start(conf, sending, link)
 }
 
-func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
+func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
 		message := <-receiving
 		zid := ZachsInotifyData{}
@@ -59,7 +60,7 @@ func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan
 		}
 		notblacklisted := true
 		for _, i := range c.Ignore {
-			if strings.HasPrefix(zid.FilePath,i) {
+			if strings.HasPrefix(zid.FilePath, i) {
 				notblacklisted = false
 				break
 			}
@@ -68,13 +69,11 @@ func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan
 			sending <- message
 		}
 	}
-
 }
 
-func (N NOPFilter) Start( c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
+func (N NOPFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
-		message := <- receiving
+		message := <-receiving
 		sending <- message
 	}
-
 }

@@ -2,10 +2,10 @@ package configurator
 
 import (
 	"encoding/json"
-	"github.com/iankronquist/senior-project-experiment/src/monitor"
-	"github.com/iankronquist/senior-project-experiment/src/filter"
-	"io"
 	"fmt"
+	"github.com/iankronquist/senior-project-experiment/src/filter"
+	"github.com/iankronquist/senior-project-experiment/src/monitor"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"

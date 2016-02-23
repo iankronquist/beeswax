@@ -2,13 +2,13 @@ package monitor
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	_ "io/ioutil"
 	"log"
 	"os"
-	"fmt"
-	_"io/ioutil"
 	"os/exec"
-	_"regexp"
+	_ "regexp"
 )
 
 /* The Monitor interface defines a series of methods which will be defined on
@@ -28,7 +28,7 @@ type Monitor interface {
  */
 type FSMonitor struct {
 	MonitorName   string
-	DockerDirs     []string
+	DockerDirs    []string
 	fsWatcherProc *exec.Cmd
 }
 
@@ -61,34 +61,34 @@ func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
 		}
 	}
 
-/*
-	dockerInfoCommand := exec.Command("docker", "info")
-	infoOutPipe, err := dockerInfoCommand.StdoutPipe()
+	/*
+		dockerInfoCommand := exec.Command("docker", "info")
+		infoOutPipe, err := dockerInfoCommand.StdoutPipe()
 
-	if err != nil {
-		panic(err)
-	}
+		if err != nil {
+			panic(err)
+		}
 
-	dockerInfoCommand.Start()
-	defer dockerInfoCommand.Wait()
+		dockerInfoCommand.Start()
+		defer dockerInfoCommand.Wait()
 
-	infoBuf, err := ioutil.ReadAll(infoOutPipe)
+		infoBuf, err := ioutil.ReadAll(infoOutPipe)
 
-	if err != nil {
-		panic(err)
-	}
+		if err != nil {
+			panic(err)
+		}
 
-	info := string(infoBuf)
+		info := string(infoBuf)
 
-	re := regexp.MustCompile("Docker Root Dir: (.*)")
+		re := regexp.MustCompile("Docker Root Dir: (.*)")
 
-	submatch := re.FindStringSubmatch(info)
+		submatch := re.FindStringSubmatch(info)
 
-	if len(submatch) < 2 {
-		fmt.Println(submatch, info)
-		panic("Couldn't find the docker root directory")
-	}
-	dockerRootPath := submatch[1]
+		if len(submatch) < 2 {
+			fmt.Println(submatch, info)
+			panic("Couldn't find the docker root directory")
+		}
+		dockerRootPath := submatch[1]
 	*/
 	dockerRootPath := "/var/lib/docker/aufs"
 
