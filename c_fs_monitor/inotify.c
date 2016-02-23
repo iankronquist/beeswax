@@ -31,11 +31,11 @@ const char *file_cstring                = "FILE";
 /* Takes two c strings and copies source into destination string
  * inserting JSON escape sequences to make it JSON safe
  */ 
-static void json_safe(const char * source, char * destination, int size)
+void json_safe(const char * source, char * destination, int size)
 {
     int l = 0;
     int k = 0;
-    for( ; k<= size && l < PATH_LIMIT; k++)
+    for( ; k< size && l < PATH_LIMIT; k++)
     {
         if(source[k] == '"' || source[k] == '\n' || source[k] == '\'' || source[k] == '\t')
         {
@@ -47,22 +47,26 @@ static void json_safe(const char * source, char * destination, int size)
             destination[l++] = source[k];
         }
     }
+	/* Just to be sure it's null terminated */
+	if(l < PATH_LIMIT)
+	{
+		destination[l] = '\0';
+	}
+	else
+	{
+		destination[l - 1] = '\0';
+	}
 }
 
 /*  Print a JSON object as defined by JSON_OBJECT
  *  Takes c style strings only, takes JSON safe directory name
  *  Takes unsafe file name and makes it safe. */
-static void print_json(const char * date, const char * event,const char *directory, const char *name, const char *type)
+void print_json(const char * date, const char * event,const char *directory, const char *name, const char *type)
 {
     char safe_name[NAME_MAX *2 +1];
-    if(strcmp(type,folder_cstring) == 0)
-    {
-	safe_name[0] = '\0';
-    }		 
-    else
-    {
-	json_safe(name,safe_name,strlen(name));
-    }
+    
+    json_safe(name,safe_name,strlen(name));
+    
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
 }
 
