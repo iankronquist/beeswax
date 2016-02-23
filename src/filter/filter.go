@@ -41,32 +41,31 @@ type ZachsInotifyData struct {
 }
 
 func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
-
 	fsFilter := FSFilter{}
+	nopFilter := NOP{}
 	conf := FilterConfig{Ignore: []string{"/dev/"}}
-	go fsFilter.Start(conf, sending, receiving)
-
+	link := make(chan []byte)
+	go fsFilter.Start(conf, link, receiving)
+	go nopFilter.Start(conf, sending, link)
 }
 
 func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
 	for {
-		select {
-			case message := <-receiving:
-				zid := ZachsInotifyData{}
-				err := json.Unmarshal(message, &zid)
-				if err != nil {
-					panic(err)
-				}
-				notblacklisted := true
-				for _, i := range c.Ignore {
-					if strings.HasPrefix(zid.FilePath,i) {
-						notblacklisted = false
-						break
-					}
-				}
-				if notblacklisted {
-					sending <- message
-				}
+		message := <-receiving
+		zid := ZachsInotifyData{}
+		err := json.Unmarshal(message, &zid)
+		if err != nil {
+			panic(err)
+		}
+		notblacklisted := true
+		for _, i := range c.Ignore {
+			if strings.HasPrefix(zid.FilePath,i) {
+				notblacklisted = false
+				break
+			}
+		}
+		if notblacklisted {
+			sending <- message
 		}
 	}
 
@@ -74,10 +73,8 @@ func (f FSFilter) Start (c FilterConfig, sending chan<- []byte, receiving <-chan
 
 func (N NOP) Start( c FilterConfig, sending chan<- []byte, receiving <-chan []byte){
 	for {
-		select{
-			case message := <- receiving:
-				sending <- message
-		}
+		message := <- receiving
+		sending <- message
 	}
 
 }
