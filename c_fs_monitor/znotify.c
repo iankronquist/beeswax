@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <ftw.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,13 +32,24 @@ const char *folder_cstring              = "FOLDER";
 const char *file_cstring                = "FILE";
 
 static void help_menu(char* file);
+static int walker(const char *fpath, const struct stat *sb, int typeflags, struct FTW *tfwbuf);
 
 int main(int argc, char* argv[])
 {
-	int i;
+	int i; 
+	int j;
+	nfds_t count;
+	int mask;
+	int *fd;//Going to change
+	int poll_num;
+	int wd; //Going to change
+	char *file_name;
+
+	nfds_t nfds;
 	short options[5] = {0,0,0,1,0};
-	
-	while( (i = getopt(argc, argv, "w:t:han")) != -1)
+	struct pollfd fds[2];
+
+	while( (i = getopt(argc, argv, "w:t:hane")) != -1)
 	{
 		switch(i)
 		{
@@ -73,8 +85,66 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 		}
 	}
+	count = count_arguments(argc,argv);
+	fd = calloc(count, sizeof(int));
+	
+	
+	/* Can Only Watch Listed Directories or Traverse them, not both */
+	if(options[OPT_W])
+	{
+/*		fd = inotify_init1(IN_NONBLOCK);
+		if( fd == -1 )
+		{
+			fprintf(stderr,"Inotify Error: %s",strerror(errno));
+			exit(EXIT_FAILURE);
+		}		
+*/
+		if(OPT_N) //Report Only New Directories
+		{
+			mask = IN_CREATE;
+		}
+		else
+		{
+			mask = IN_ALL_EVENTS;
+		}
+		for(i=0,j=1; i < count; i++)
+		{
+			fetch_argument(&j,argc, argv,&file_name);
+			fd[i] = inotify_init1(IN_NONBLOCK);
+			if( fd[i] == -1 )
+			{
+				free(fd);
+				exit(EXIT_FAILURE);
+				
+			}
+			if( ntfw(file_name,walker,20, 0) == -1)
+			{
+				free(fd);
+			}
+		}
+	}
+	else if(options[OPT_T])
+	{
+		
+	}
+	
+//Poll Section
 
+
+	free(fd);
 	return EXIT_SUCCESS;
+}
+
+/*************************************************************************
+ * Function: 	help_menu
+ * Description: Prints out commands for help
+ * Parameters:  verbose for debugging
+ * Pre-Conditions: None
+ * Post-Conditions: Prints help
+*************************************************************************/
+static int walker(const char *fpath, const struct stat *sb,int typeflags, struct FTW *tfwbuf)
+{
+	return 0;
 }
 
 /*************************************************************************
