@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 600 //Needed to compile without Errors
 #include <errno.h>
 #include <ftw.h>
 #include <poll.h>
@@ -32,7 +33,7 @@ const char *folder_cstring              = "FOLDER";
 const char *file_cstring                = "FILE";
 
 static void help_menu(char* file);
-static int walker(const char *fpath, const struct stat *sb, int typeflags, struct FTW *tfwbuf);
+static int walker(const char *pathname, const struct stat *sbuf, int type,struct FTW *ftwb);
 
 int main(int argc, char* argv[])
 {
@@ -117,7 +118,7 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 				
 			}
-			if( ntfw(file_name,walker,20, 0) == -1)
+			if( nftw(file_name,walker,20, FTW_PHYS | FTW_MOUNT) == -1)
 			{
 				free(fd);
 			}
@@ -142,11 +143,19 @@ int main(int argc, char* argv[])
  * Pre-Conditions: None
  * Post-Conditions: Prints help
 *************************************************************************/
-static int walker(const char *fpath, const struct stat *sb, int typeflags, struct FTW *tfwbuf)
+static int walker(const char *pathname, const struct stat *sbuf, int type,struct FTW *ftwb)
 {
+	if(sbuf->st_mode & FTW_D)
+	{
+		fprintf(stdout,"\nFound: %s",pathname);
+		//Add to Watch List
+	}
+	else if(sbuf->st_mode & FTW_DNR)
+	{
+		fprintf(stderr,"\nCan't Read: %s",pathname);
+	}
 	return 0;
 }
-
 /*************************************************************************
  * Function: 	help_menu
  * Description: Prints out commands for help
