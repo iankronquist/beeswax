@@ -90,6 +90,14 @@ int main(int argc, char* argv[])
 	fd = calloc(count, sizeof(int));
 	
 	
+	if(OPT_N) //Report Only New Directories
+	{
+		mask = IN_CREATE;
+	}
+	else
+	{
+		mask = IN_ALL_EVENTS;
+	}
 	/* Can Only Watch Listed Directories or Traverse them, not both */
 	if(options[OPT_W])
 	{
@@ -100,14 +108,12 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}		
 */
-		if(OPT_N) //Report Only New Directories
+		for(i=0,j=1; i < count; i++)
 		{
-			mask = IN_CREATE;
 		}
-		else
-		{
-			mask = IN_ALL_EVENTS;
-		}
+	}
+	else if(options[OPT_T])
+	{
 		for(i=0,j=1; i < count; i++)
 		{
 			fetch_argument(&j,argc, argv,&file_name);
@@ -121,15 +127,12 @@ int main(int argc, char* argv[])
 			if( nftw(file_name,walker,20, FTW_PHYS | FTW_MOUNT) == -1)
 			{
 				free(fd);
+				exit(EXIT_FAILURE);
 			}
-		}
-	}
-	else if(options[OPT_T])
-	{
-		
+		}	
 	}
 	
-//Poll Section
+//Poll Section - 2 sections-> 0 for Don't Add 1 for add
 
 
 	free(fd);
@@ -137,11 +140,11 @@ int main(int argc, char* argv[])
 }
 
 /*************************************************************************
- * Function: 	help_menu
- * Description: Prints out commands for help
- * Parameters:  verbose for debugging
+ * Function: 	walker
+ * Description: This the function called by the tree walker
+ * Parameters:  NFTW provides all the information and variables
  * Pre-Conditions: None
- * Post-Conditions: Prints help
+ * Post-Conditions: NFTW function needs 0 to keep on running
 *************************************************************************/
 static int walker(const char *pathname, const struct stat *sbuf, int type,struct FTW *ftwb)
 {
