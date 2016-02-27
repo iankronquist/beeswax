@@ -2,7 +2,7 @@ CC=gcc
 
 all: senior-project-experiment c_fs_monitor/inotify
 
-senior-project-experiment: main.go src/
+senior-project-experiment: main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
 	go build
 
 c_fs_monitor/test_fs_monitor: c_fs_monitor/test_fs_monitor.c
