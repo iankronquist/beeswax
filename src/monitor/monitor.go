@@ -33,7 +33,7 @@ type FSMonitor struct {
 }
 
 type NetMonitor struct {
-	MonitorName string
+	MonitorName  string
 	ContainerIds []string
 }
 
@@ -104,7 +104,7 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 }
 
 func startIPProcess(messages chan<- []byte, procId string, watcherName string,
-		watcherArgs... string) {
+	watcherArgs ...string) {
 	arguments := []string{"netns", "exec", procId, watcherName}
 	arguments = append(arguments, watcherArgs...)
 	netWatcherCommand := exec.Command("ip", arguments...)
@@ -129,7 +129,7 @@ func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 }
 
 func setSymlink(procId string, destination string) error {
-	err := os.Symlink("/proc/" + procId + "/ns/net", "/var/run/netns/" + procId)
+	err := os.Symlink("/proc/"+procId+"/ns/net", "/var/run/netns/"+procId)
 	return err
 }
 
@@ -185,8 +185,8 @@ func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
  */
 func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	m.DockerDirs = m.getDockerFSDirectory(dockerComposeName)
-	fmt.Println(m.MonitorName)
 	m.fsWatcherProc = exec.Command(m.MonitorName, m.DockerDirs...)
+	fmt.Println(m.MonitorName, m.DockerDirs)
 	defer m.fsWatcherProc.Wait()
 
 	outpipe, err := m.fsWatcherProc.StdoutPipe()

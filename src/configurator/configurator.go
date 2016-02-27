@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/iankronquist/senior-project-experiment/src/filter"
 	"github.com/iankronquist/senior-project-experiment/src/monitor"
+	"github.com/iankronquist/senior-project-experiment/src/reporter"
 	"io"
 	"io/ioutil"
 	"os"
@@ -15,10 +16,10 @@ type Config struct {
 	DockerComposeName string   `json:"docker compose name"`
 	MonitorName       string   `json:"monitor process name"`
 	Containers        []string `json:"container names"`
-	MHNHost           string `json:"mhn host"`
-	MHNPort           string `json:"mhn port"`
-	MHNIdent string `json:"mhn identifier"`
-	MHNAuth string `json:"mhn authorization"`
+	MHNHost           string   `json:"mhn host"`
+	MHNPort           int      `json:"mhn port"`
+	MHNIdent          string   `json:"mhn identifier"`
+	MHNAuth           string   `json:"mhn authorization"`
 }
 
 func StartContainers(c Config) error {
@@ -73,6 +74,8 @@ func StartMonitor(c Config) {
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
 	go fsMonitor.Start(FSMessages, c.DockerComposeName)
 	go filter.StartFilterStream(FSMessagesOut, FSMessages)
+	outputs := [](chan []byte){FSMessagesOut}
+	go reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, outputs)
 	for {
 		message := <-FSMessagesOut
 		fmt.Println("Message received: ", string(message))
