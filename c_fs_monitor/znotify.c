@@ -1,9 +1,11 @@
 #define _XOPEN_SOURCE 600 //Needed to compile without Errors
+#include <assert.h>
 #include <errno.h>
 #include <ftw.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
+//#include <stdint.h>
 #include <string.h>
 #include <sys/inotify.h>
 #include <unistd.h>
@@ -32,24 +34,28 @@ const char *in_delete_self_cstring      = "IN_DELETE_SELF";
 const char *folder_cstring              = "FOLDER";
 const char *file_cstring                = "FILE";
 
+struct znotify steve;
+int mask;
+
 static void help_menu(char* file);
 static int walker(const char *pathname, const struct stat *sbuf, int type,struct FTW *ftwb);
-
+//static int add_watcher(int fd, const char *pathname, unit32_t mask);
 int main(int argc, char* argv[])
 {
 	int i; 
 	int j;
-	nfds_t count;
-	int mask;
-	int *fd;//Going to change
 	int poll_num;
-	int wd; //Going to change
 	char *file_name;
 
 	nfds_t nfds;
 	short options[5] = {0,0,0,1,0};
 	struct pollfd fds[2];
-
+	if(argc == 1)
+	{
+		fprintf(stderr,"\nNot Enough Arguments");
+		help_menu(argv[0]);
+		exit(EXIT_FAILURE);
+	}
 	while( (i = getopt(argc, argv, "w:t:hane")) != -1)
 	{
 		switch(i)
@@ -86,10 +92,17 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 		}
 	}
-	count = count_arguments(argc,argv);
-	fd = calloc(count, sizeof(int));
+	steve.arguments = count_arguments(argc,argv);
+	steve.fd = calloc(steve.arguments, sizeof(int));
+	steve.w_count = calloc(steve.arguments,sizeof(int));
+	steve.wd = calloc(steve.arguments, sizeof(int*));
 	
-	
+	for(i = 0; i < steve.arguments; i++)
+	{
+		steve.w_count[i] = DEFAULT_WATCH_NUMBER;
+		steve.wd[i] = calloc(DEFAULT_WATCH_NUMBER,sizeof(int));
+	}
+
 	if(OPT_N) //Report Only New Directories
 	{
 		mask = IN_CREATE;
@@ -101,32 +114,37 @@ int main(int argc, char* argv[])
 	/* Can Only Watch Listed Directories or Traverse them, not both */
 	if(options[OPT_W])
 	{
-/*		fd = inotify_init1(IN_NONBLOCK);
-		if( fd == -1 )
+		for(i=0,j=1; i < steve.arguments; i++)
 		{
-			fprintf(stderr,"Inotify Error: %s",strerror(errno));
-			exit(EXIT_FAILURE);
-		}		
-*/
-		for(i=0,j=1; i < count; i++)
-		{
+			fetch_argument(&j,argc, argv,&file_name);
+			steve.fd[i] = inotify_init1(IN_NONBLOCK);
+			steve.current_f = i;
+			steve.current_w = 0;
+			if( steve.fd[i] == -1 )
+			{
+				exit(EXIT_FAILURE);
+			}
+			steve.wd[i][0] = inotify_add_watch(steve.fd[i], file_name, mask);
+			steve.w_count[i] = 1;
 		}
 	}
 	else if(options[OPT_T])
 	{
-		for(i=0,j=1; i < count; i++)
+		for(i=0,j=1; i < steve.arguments; i++)
 		{
 			fetch_argument(&j,argc, argv,&file_name);
-			fd[i] = inotify_init1(IN_NONBLOCK);
-			if( fd[i] == -1 )
+			steve.fd[i] = inotify_init1(IN_NONBLOCK);
+			steve.current_f = i;
+			steve.current_w = 0;
+			if( steve.fd[i] == -1 )
 			{
-				free(fd);
+				//free(fd);
 				exit(EXIT_FAILURE);
 				
 			}
 			if( nftw(file_name,walker,20, FTW_PHYS | FTW_MOUNT) == -1)
 			{
-				free(fd);
+			//	free(fd);
 				exit(EXIT_FAILURE);
 			}
 		}	
@@ -135,7 +153,7 @@ int main(int argc, char* argv[])
 //Poll Section - 2 sections-> 0 for Don't Add 1 for add
 
 
-	free(fd);
+	//free(fd);
 	return EXIT_SUCCESS;
 }
 
@@ -146,12 +164,33 @@ int main(int argc, char* argv[])
  * Pre-Conditions: None
  * Post-Conditions: NFTW function needs 0 to keep on running
 *************************************************************************/
-static int walker(const char *pathname, const struct stat *sbuf, int type,struct FTW *ftwb)
+static int walker(const char *pathname, const struct stat *sbuf,
+		int type,struct FTW *ftwb)
 {
+	int * temp = NULL;
 	if(sbuf->st_mode & FTW_D)
 	{
-		fprintf(stdout,"\nFound: %s",pathname);
-		//Add to Watch List
+		fprintf(stderr,"\nFound: %s",pathname);
+		if(steve.w_count[steve.current_f] <= steve.current_w)
+		{
+			fprintf(stderr,"\nReallocating Memory");
+			temp = realloc(steve.wd[steve.current_f],
+				((steve.w_count[steve.current_f] + 10)*sizeof(int)));
+			if(temp != NULL)
+			{
+				steve.wd[steve.current_f] = temp;
+				steve.w_count[steve.current_f] += 10;
+			}
+			else
+			{
+				return -1;
+			}
+		}
+		steve.wd[steve.current_f][steve.current_w] = 
+			inotify_add_watch(steve.fd[steve.current_f], pathname, mask);	
+		
+		steve.current_w++;
+		assert(steve.current_w > 0);
 	}
 	else if(sbuf->st_mode & FTW_DNR)
 	{

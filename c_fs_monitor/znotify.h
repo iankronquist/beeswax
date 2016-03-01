@@ -12,10 +12,25 @@
  * represented by two strings, directory + file or directory name
  */ 
 #define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"TYPE\":\"%s\"}\n"
-#define PATH_LIMIT PATH_MAX * 2 + 1
+#define PATH_LIMIT (PATH_MAX * 2 + 1)
 #define TIME_OUTPUT "%c"
 #define MAX_INOTIFY_INSTANCES 128 // in proc/sys/fs/inotify/max_user_*
 #define MAX_WATCHES 8192
+#define DEFAULT_WATCH_NUMBER 2 
+
+struct znotify
+{
+	int arguments; //Command Line directories
+	int *fd;      
+	int **wd;
+	int current_f; 
+	int current_w;
+	int *w_count; //Keep track of how many watch descriptors	
+};
+
+
+/*Put these functions back into znotify.c */
+
 /* Takes two c strings and copies source into destination string
  * inserting JSON escape sequences to make it JSON safe
  */ 
