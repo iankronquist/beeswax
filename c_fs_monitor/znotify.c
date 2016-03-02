@@ -36,6 +36,7 @@ const char *file_cstring                = "FILE";
 struct znotify steve;
 int mask;
 
+static void cleanup();
 static void handle_events(int fd, int *wd);
 static void json_safe(const char * source, char * destination, int size);
 static void print_json(const char * date, const char * event,const char *directory,
@@ -63,7 +64,8 @@ int main(int argc, char* argv[])
 		help_menu(argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	while( (i = getopt(argc, argv, "w:t:hane")) != -1)
+	
+	while( (i = getopt(argc, argv, "hanew:t:")) != -1)
 	{
 		switch(i)
 		{
@@ -84,6 +86,7 @@ int main(int argc, char* argv[])
 				options[OPT_N] = 1;
 				break;
 			case 'e':
+				options[OPT_N] = 0;
 				options[OPT_E] = 1;
 				break;
 			case ':':
@@ -111,12 +114,12 @@ int main(int argc, char* argv[])
 		steve.w_count[i] = DEFAULT_WATCH_NUMBER;
 		steve.wd[i] = calloc(DEFAULT_WATCH_NUMBER,sizeof(int));
 	}
-
-	if(OPT_N) //Report Only New Directories
+	atexit(cleanup);
+	if(options[OPT_N]) //Report Only New Directories
 	{
 		mask = IN_CREATE;
 	}
-	else
+	else if(options[OPT_E])
 	{
 		mask = IN_ALL_EVENTS;
 	}
@@ -133,7 +136,8 @@ int main(int argc, char* argv[])
 			{
 				exit(EXIT_FAILURE);
 			}
-			steve.wd[i][0] = inotify_add_watch(steve.fd[i], file_name, mask);
+			steve.wd[i][0] = 
+				inotify_add_watch(steve.fd[i], file_name, mask);
 			steve.w_count[i] = 1;
 		}
 	}
@@ -147,13 +151,11 @@ int main(int argc, char* argv[])
 			steve.current_w = 0;
 			if( steve.fd[i] == -1 )
 			{
-				//free(fd);
 				exit(EXIT_FAILURE);
 				
 			}
 			if( nftw(file_name,walker,20, FTW_PHYS | FTW_MOUNT) == -1)
 			{
-			//	free(fd);
 				exit(EXIT_FAILURE);
 			}
 		}	
@@ -183,16 +185,44 @@ int main(int argc, char* argv[])
 			{
 				if(poll_fd[j].revents & POLLIN)
 				{
-                    handle_events(steve.fd[j],steve.wd[j]);
+		 			handle_events(steve.fd[j],steve.wd[j]);
 				}
 			}
 		}
 	}
 
-	//free(fd);
 	return EXIT_SUCCESS;
 }
 
+/*****************************************************************************
+ * Function: 	   cleanup 
+ * Description:    Frees all memory used by the structure znotify
+ *		   Note: Used to help with valgrind
+ * Parameters:     None
+ * Pre-Conditions: Exit Called
+ * Post-Conditions:Heap Memory is freed
+ ****************************************************************************/
+static void cleanup()
+{
+	int i;
+
+	for( i = 0; i < steve.arguments; i++)
+	{	
+		free(steve.wd[i]);
+	}
+	free(steve.wd);
+	free(steve.fd);
+	free(steve.w_count);
+}
+
+/*****************************************************************************
+ * Function: 	   handle_events
+ * Description:    Generic Event Handler, Reads from file discriptor for 
+ *		   events and sends information to print
+ * Parameters:     File Desciptor and WatchDescriptor pointer
+ * Pre-Conditions: Event Occured 
+ * Post-Conditions:Event is Reported
+ ****************************************************************************/
 static void
 handle_events(int fd, int *wd )
 {
@@ -322,17 +352,14 @@ handle_events(int fd, int *wd )
     fflush(stdout);
 }
 
-/* Takes two c strings and copies source into destination string
- * inserting JSON escape sequences to make it JSON safe
- */
-static void json_safe(const char * source, char * destination, int size)
 /*****************************************************************************
- * Function:
- * Description:
- * Parameters:
- * Pre-Conditions:
- * Post-Conditions:
+ * Function:	   json_safe
+ * Description:    Makes pathnames safe to be printed out as JSON 
+ * Parameters:     2 c strings, and length of source
+ * Pre-Conditions: None
+ * Post-Conditions:Destination is now Safe to be printed
  ****************************************************************************/
+static void json_safe(const char * source, char * destination, int size)
 {
     int l = 0;
     int k = 0;
@@ -359,17 +386,13 @@ static void json_safe(const char * source, char * destination, int size)
     }
 }
               
-/* Print a JSON object as defined by JSON_OBJECT
- * Takes c style strings only, takes JSON safe directory name
- * Takes unsafe file name and makes it safe.
- */
-              
 /*****************************************************************************
- * Function:
- * Description:
- * Parameters:
- * Pre-Conditions:
- * Post-Conditions:
+ * Function:	   print_json
+ * Description:	   Prints to Standard Output JSON object defined in 
+ *	  	   znotify.h
+ * Parameters:	   Date, type of event, pathanme, file or directory
+ * Pre-Conditions: Assumes directory is properly escaped for JSON
+ * Post-Conditions:Prints string to standard output
  ****************************************************************************/
 static void print_json(const char * date, const char * event,const char *directory,
                 const char *name, const char *type)

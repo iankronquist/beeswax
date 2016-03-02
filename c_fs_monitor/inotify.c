@@ -6,12 +6,8 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <time.h>
-#include <limits.h>
 
-#define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s%s\",\"TYPE\":\"%s\"}\n"
-// Maximimum pathname, all escapes and 1 null terminator
-#define PATH_LIMIT PATH_MAX * 2 + 1
-#define TIME_OUTPUT "%c"
+#include "znotify.h"
 
 // Defined in limits.h
 const char *in_access_cstring           = "IN_ACCESS";
@@ -28,47 +24,7 @@ const char *in_delete_self_cstring      = "IN_DELETE_SELF";
 const char *folder_cstring              = "FOLDER";
 const char *file_cstring                = "FILE";
 
-/* Takes two c strings and copies source into destination string
- * inserting JSON escape sequences to make it JSON safe
- */ 
-void json_safe(const char * source, char * destination, int size)
-{
-    int l = 0;
-    int k = 0;
-    for( ; k< size && l < PATH_LIMIT; k++)
-    {
-        if(source[k] == '"' || source[k] == '\n' || source[k] == '\'' || source[k] == '\t')
-        {
-            destination[l++] = '\\';
-            destination[l++] = source[k];
-        }
-        else
-        {
-            destination[l++] = source[k];
-        }
-    }
-	/* Just to be sure it's null terminated */
-	if(l < PATH_LIMIT)
-	{
-		destination[l] = '\0';
-	}
-	else
-	{
-		destination[l - 1] = '\0';
-	}
-}
 
-/*  Print a JSON object as defined by JSON_OBJECT
- *  Takes c style strings only, takes JSON safe directory name
- *  Takes unsafe file name and makes it safe. */
-void print_json(const char * date, const char * event,const char *directory, const char *name, const char *type)
-{
-    char safe_name[NAME_MAX *2 +1];
-    
-    json_safe(name,safe_name,strlen(name));
-    
-    fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
-}
 
 
 /* Read all available inotify events from the file descriptor 'fd'.
@@ -252,7 +208,7 @@ main(int argc, char* argv[])
     for (i = 1; i < argc; i++)
     {
         wd[i] = inotify_add_watch(fd, argv[i],
-                                  IN_ALL_EVENTS);
+                                  IN_ALL_EVENTS| IN_ONLYDIR);
         if (wd[i] == -1)
         {
             fprintf(stderr, "Cannot watch '%s'\n", argv[i]);
