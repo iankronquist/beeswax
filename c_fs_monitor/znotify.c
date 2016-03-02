@@ -451,11 +451,11 @@ static nfds_t count_arguments(int argc, char *argv[])
 
             
 /*************************************************************************
- * Function: 	walker
- * Description: This the function called by the tree walker
- * Parameters:  NFTW provides all the information and variables
- * Pre-Conditions: None
- * Post-Conditions: NFTW function needs 0 to keep on running
+ * Function: 	
+ * Description: 
+ * Parameters:  
+ * Pre-Conditions:
+ * Post-Conditions: 
 *************************************************************************/
 static int watch_this(const char *pathname)
 {
@@ -480,6 +480,15 @@ static int watch_this(const char *pathname)
     fd = inotify_add_watch(steve.fd[steve.current_f], pathname, mask);
     if(fd == -1)
     {
+	if((errno == ENOSPC) && (steve.w_count[steve.current_f] >= MAX_WATCHES))
+	{
+		fprintf(stderr,"\nError: Try Putting Subdirectories in Command Line\n");
+	}
+	else
+	{	
+		fprintf(stderr,"\nError Occured Adding to Watch List: %s %s\n",
+			pathname,strerror(errno));
+	}
         return -1;
     }
     steve.wd[steve.current_f][steve.current_w] = fd;
@@ -498,7 +507,7 @@ static int watch_this(const char *pathname)
 static int walker(const char *pathname, const struct stat *sbuf,
 		int type,struct FTW *ftwb)
 {
-	if(sbuf->st_mode & FTW_D)
+	if(sbuf->st_mode & FTW_DP)
 	{
         	return watch_this(pathname);
 	}
