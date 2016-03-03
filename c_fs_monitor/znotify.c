@@ -106,21 +106,37 @@ int main(int argc, char* argv[])
 	steve.fd = calloc(steve.arguments, sizeof(int));
 	steve.w_count = calloc(steve.arguments,sizeof(int));
 	steve.wd = calloc(steve.arguments, sizeof(int*));
-//	steve.path = calloc(steve.arguments
+	steve.path = calloc(steve.arguments, sizeof(char *));
 	
 	poll_fd = calloc(steve.arguments,sizeof(struct pollfd));
-
-	for(i = 0; i < steve.arguments; i++)
+	if(options[OPT_T])
 	{
-		steve.w_count[i] = DEFAULT_WATCH_NUMBER;
-		steve.wd[i] = calloc(DEFAULT_WATCH_NUMBER,sizeof(int));
+		for(i = 0; i < steve.arguments; i++)
+		{
+			steve.w_count[i] = DEFAULT_WATCH_NUMBER;
+			steve.wd[i] = calloc(DEFAULT_WATCH_NUMBER,sizeof(int));
+			steve.path[i] = calloc(DEFAULT_WATCH_NUMBER,
+						sizeof(char *));
+		}
 	}
+	else if(options[OPT_W])
+	{
+		for(i = 0; i < steve.arguments; i++)
+		{
+			steve.w_count[i] = 1;
+			steve.wd[i] = calloc(1,sizeof(int));
+			steve.path[i] = calloc(1,sizeof(char *));
+			steve.path[i][0] = calloc(PATH_LIMIT,sizeof(char));
+		}
+	}
+
 	atexit(cleanup);
+
 	if(options[OPT_N]) //Report Only New Directories
 	{
 		mask = IN_CREATE;
 	}
-	else if(options[OPT_E])
+	else if(options[OPT_E]) //Report all events
 	{
 		mask = IN_ALL_EVENTS;
 	}
@@ -139,6 +155,7 @@ int main(int argc, char* argv[])
 			}
 			steve.wd[i][0] = 
 				inotify_add_watch(steve.fd[i], file_name, mask);
+			json_safe(file_name,steve.path[i][0],strlen(file_name));
 			steve.w_count[i] = 1;
 		}
 	}
@@ -186,7 +203,8 @@ int main(int argc, char* argv[])
 			{
 				if(poll_fd[j].revents & POLLIN)
 				{
-		 			handle_events(steve.fd[j],steve.wd[j]);
+		 			steve.current_f = j;
+					handle_events(steve.fd[j],steve.wd[j]);
 				}
 			}
 		}
@@ -206,11 +224,18 @@ int main(int argc, char* argv[])
 static void cleanup()
 {
 	int i;
+	int j;
 
 	for( i = 0; i < steve.arguments; i++)
 	{	
 		free(steve.wd[i]);
+		for(j = 0; j < steve.w_count[i]; j++)
+		{
+			free(steve.path[i][j]);
+		}
+		free(steve.path[i]);
 	}
+	free(steve.path);
 	free(steve.wd);
 	free(steve.fd);
 	free(steve.w_count);
@@ -322,16 +347,17 @@ handle_events(int fd, int *wd )
             /* Once DELETE_SELF -> quit
              */
             /* Print the name of the watched directory */
-            /*
-            for (i = 0; i < steve.arguments; ++i)
+            
+            for (i = 0; i < steve.w_count[steve.current_f]; ++i)
             {
                 if (wd[i] == event->wd)
                 {
-                    directory = safe_array[i-1];
+                    steve.current_w = i;
                     break;
                 }
             }
-            */
+//fprintf(stdout,"\nevent->wd %d, steve.current_w %d",event->wd,i);
+//	    steve.current_w = event->wd;
             /* Print the name of the file */
             
             //            if (event->len)
@@ -346,8 +372,9 @@ handle_events(int fd, int *wd )
             {
                 type_ptr = file_cstring;
             }
-            //print_json(buffer,mask_ptr,directory,event->name,type_ptr);
-            print_json(buffer,mask_ptr,"CANDY\0",event->name,type_ptr);
+            print_json(buffer,mask_ptr,
+			steve.path[steve.current_f][steve.current_w],
+			event->name,type_ptr);
         }
     }
     fflush(stdout);
@@ -379,10 +406,12 @@ static void json_safe(const char * source, char * destination, int size)
     /* Just to be sure it's null terminated */
     if(l < PATH_LIMIT)
     {
+//	destination[l - 1] = '/';
         destination[l] = '\0';
     }
     else
     {
+//	destination[l - 2] = '/';
         destination[l - 1] = '\0';
     }
 }
@@ -461,21 +490,25 @@ static nfds_t count_arguments(int argc, char *argv[])
 static int watch_this(const char *pathname)
 {
     int *temp = NULL;
+    char **temp_paths = NULL;
     int fd;
     if(steve.w_count[steve.current_f] <= steve.current_w)
     {
         temp = realloc(steve.wd[steve.current_f],
-                       ((steve.w_count[steve.current_f] + INCREMENT)*sizeof(int)));
-        
-        if(temp != NULL)
+                ((steve.w_count[steve.current_f] + INCREMENT)*sizeof(int)));
+        temp_paths = realloc(steve.path[steve.current_f],
+		((steve.w_count[steve.current_f] + INCREMENT)*sizeof(char*)));
+        if((temp != NULL) && temp_paths != NULL)
         {
             steve.wd[steve.current_f] = temp;
+	    steve.path[steve.current_f] = temp_paths;
             steve.w_count[steve.current_f] += 10;
         }
         else
         {
             return -1;
         }
+	
     }
     fd = inotify_add_watch(steve.fd[steve.current_f], pathname, mask);
     if(fd == -1)
@@ -492,8 +525,12 @@ static int watch_this(const char *pathname)
         return -1;
     }
     steve.wd[steve.current_f][steve.current_w] = fd;
+    // Get JSON safe pathname
+    steve.path[steve.current_f][steve.current_w] = 
+				calloc(PATH_LIMIT,sizeof(char));
+    json_safe(pathname,steve.path[steve.current_f][steve.current_w],PATH_LIMIT);
+
     steve.current_w++;
-    
     return 0;
 }
 
