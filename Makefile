@@ -1,6 +1,6 @@
 CC=gcc
 
-all: senior-project-experiment c_fs_monitor/inotify
+all: senior-project-experiment c_fs_monitor/znotify
 
 senior-project-experiment: main.go src/
 	go build
