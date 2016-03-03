@@ -106,6 +106,7 @@ int main(int argc, char* argv[])
 	steve.fd = calloc(steve.arguments, sizeof(int));
 	steve.w_count = calloc(steve.arguments,sizeof(int));
 	steve.wd = calloc(steve.arguments, sizeof(int*));
+//	steve.path = calloc(steve.arguments
 	
 	poll_fd = calloc(steve.arguments,sizeof(struct pollfd));
 
@@ -461,7 +462,6 @@ static int watch_this(const char *pathname)
 {
     int *temp = NULL;
     int fd;
-    
     if(steve.w_count[steve.current_f] <= steve.current_w)
     {
         temp = realloc(steve.wd[steve.current_f],
@@ -507,14 +507,19 @@ static int watch_this(const char *pathname)
 static int walker(const char *pathname, const struct stat *sbuf,
 		int type,struct FTW *ftwb)
 {
-	if(sbuf->st_mode & FTW_DP)
+	if(sbuf->st_mode & S_IFLNK)
+	{
+		fprintf(stderr,"\nSkipping Symlink: %s",pathname);
+		return 0;
+	}
+	else if(sbuf->st_mode & S_IFDIR)
 	{
         	return watch_this(pathname);
 	}
 	else if(sbuf->st_mode & FTW_DNR)
 	{
 		fprintf(stderr,"\nCan't Read: %s",pathname);
-        	return -1;
+        	return 0;
 	}
 }
 /*************************************************************************
