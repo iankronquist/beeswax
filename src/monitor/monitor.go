@@ -55,12 +55,19 @@ func getDockerContainerIds(dockerComposeName string) []string {
 
 	ids := []string{}
 	stdoutReader := bufio.NewReader(outpipe)
+
 	for {
-		line, _, err := stdoutReader.ReadLine()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
+		fetch := true
+		line := []byte{}
+		for fetch {
+			partial_line, f, err := stdoutReader.ReadLine()
+			fetch = f
+			line = append(line, partial_line...)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				panic(err)
+			}
 		}
 		if string(line) != "" {
 			ids = append(ids, string(line))
@@ -86,11 +93,17 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	procIds := []string{}
 	stdoutReader := bufio.NewReader(outpipe)
 	for {
-		line, _, err := stdoutReader.ReadLine()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
+		fetch := true
+		line := []byte{}
+		for fetch {
+			partial_line, f, err := stdoutReader.ReadLine()
+			fetch = f
+			line = append(line, partial_line...)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				panic(err)
+			}
 		}
 		if string(line) != "" {
 			procIds = append(procIds, string(line))
@@ -118,11 +131,17 @@ func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 
 	stdoutReader := bufio.NewReader(outpipe)
 	for {
-		line, _, err := stdoutReader.ReadLine()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			panic(err)
+		fetch := true
+		line := []byte{}
+		for fetch {
+			partial_line, f, err := stdoutReader.ReadLine()
+			fetch = f
+			line = append(line, partial_line...)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				panic(err)
+			}
 		}
 		messages <- line
 	}
@@ -204,13 +223,19 @@ func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	m.fsWatcherProc.Start()
 
 	stdoutReader := bufio.NewReader(outpipe)
+
 	for {
-		line, _, err := stdoutReader.ReadLine()
-		if err != nil {
-			panic(err)
+		fetch := true
+		line := []byte{}
+		for fetch {
+			partial_line, f, err := stdoutReader.ReadLine()
+			fetch = f
+			line = append(line, partial_line...)
+			if err != nil {
+				panic(err)
+			}
 		}
-		sb := line
-		messages <- sb
+		messages <- line
 
 	}
 }
