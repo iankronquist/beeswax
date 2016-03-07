@@ -37,7 +37,7 @@ struct znotify steve;
 int mask;
 
 static void cleanup();
-static void handle_events(int fd, int *wd);
+static void handle_events(int fd, int *wd, int add_child);
 static void json_safe(const char * source, char * destination, int size);
 static void print_json(const char * date, const char * event,const char *directory,
                        const char *name, const char *type);
@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
 	steve.arguments = count_arguments(argc,argv);
 	steve.fd = calloc(steve.arguments, sizeof(int));
 	steve.w_count = calloc(steve.arguments,sizeof(int));
+	steve.w_last = calloc(steve.arguments,sizeof(int));
 	steve.wd = calloc(steve.arguments, sizeof(int*));
 	steve.path = calloc(steve.arguments, sizeof(char *));
 	
@@ -172,7 +173,8 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 				
 			}
-			if( nftw(file_name,walker,20, FTW_PHYS | FTW_MOUNT) == -1)
+			if( nftw(file_name,walker,20, 
+				FTW_PHYS | FTW_MOUNT | FTW_DEPTH) == -1)
 			{
 				exit(EXIT_FAILURE);
 			}
@@ -204,7 +206,9 @@ int main(int argc, char* argv[])
 				if(poll_fd[j].revents & POLLIN)
 				{
 		 			steve.current_f = j;
-					handle_events(steve.fd[j],steve.wd[j]);
+					handle_events(steve.fd[j],
+						      steve.wd[j],
+						      options[OPT_A]);
 				}
 			}
 		}
@@ -229,13 +233,14 @@ static void cleanup()
 	for( i = 0; i < steve.arguments; i++)
 	{	
 		free(steve.wd[i]);
-		for(j = 0; j < steve.w_count[i]; j++)
+		for(j = 0; j < steve.w_last[i]; j++)
 		{
 			free(steve.path[i][j]);
 		}
 		free(steve.path[i]);
 	}
 	free(steve.path);
+	free(steve.w_last);
 	free(steve.wd);
 	free(steve.fd);
 	free(steve.w_count);
@@ -250,7 +255,7 @@ static void cleanup()
  * Post-Conditions:Event is Reported
  ****************************************************************************/
 static void
-handle_events(int fd, int *wd )
+handle_events(int fd, int *wd,int add_child )
 {
     /* Some systems cannot read integer variables if they are not
      * properly aligned. On other systems, incorrect alignment may
@@ -260,6 +265,7 @@ handle_events(int fd, int *wd )
     char buf[4096]
     __attribute__ ((aligned(__alignof__(struct inotify_event))));
     const struct inotify_event *event;
+    char pathname_buffer[PATH_LIMIT];
     int i;
     ssize_t len;
     char *ptr;
@@ -296,13 +302,38 @@ handle_events(int fd, int *wd )
         for (ptr = buf; ptr < buf + len;
              ptr += sizeof(struct inotify_event) + event->len)
         {
-            //fprintf(stdout,"Time: %s",ctime(&current_time));
             event = (const struct inotify_event *) ptr;
             
-            /* Print event type */
+            for (i = 0; i < steve.w_count[steve.current_f]; ++i)
+            {
+                if (wd[i] == event->wd)
+                {
+                    steve.current_w = i;
+                    break;
+                }
+            }
+            
+	    //Identify if Folder or File 
+            if (event->mask & IN_ISDIR)
+            {
+                type_ptr = folder_cstring;
+            }
+            else
+            {
+                type_ptr = file_cstring;
+            }
+            
+	    /* Print event type */
             if (IN_CREATE & event->mask)
             {
                 mask_ptr = in_create_cstring;
+		if(add_child && (strcmp(type_ptr,folder_cstring)==0))
+		{	
+			strcpy(pathname_buffer,  steve.path[steve.current_f]
+							[steve.current_w]);
+			strcat(pathname_buffer,event->name);
+			fprintf(stderr,"\nPathname: %s\n",pathname_buffer);
+		}
             }
             else if (IN_ACCESS & event->mask)
             {
@@ -344,35 +375,8 @@ handle_events(int fd, int *wd )
             {
                 mask_ptr = in_delete_self_cstring;
             }
-            /* Once DELETE_SELF -> quit
-             */
-            /* Print the name of the watched directory */
             
-            for (i = 0; i < steve.w_count[steve.current_f]; ++i)
-            {
-                if (wd[i] == event->wd)
-                {
-                    steve.current_w = i;
-                    break;
-                }
-            }
-//fprintf(stdout,"\nevent->wd %d, steve.current_w %d",event->wd,i);
-//	    steve.current_w = event->wd;
-            /* Print the name of the file */
-            
-            //            if (event->len)
-            //                fprintf(stdout, "%s", event->name);
-            /* Print type of filesystem object */
-            
-            if (event->mask & IN_ISDIR)
-            {
-                type_ptr = folder_cstring;
-            }
-            else
-            {
-                type_ptr = file_cstring;
-            }
-            print_json(buffer,mask_ptr,
+	    print_json(buffer,mask_ptr,
 			steve.path[steve.current_f][steve.current_w],
 			event->name,type_ptr);
         }
@@ -529,7 +533,7 @@ static int watch_this(const char *pathname)
     steve.path[steve.current_f][steve.current_w] = 
 				calloc(PATH_LIMIT,sizeof(char));
     json_safe(pathname,steve.path[steve.current_f][steve.current_w],PATH_LIMIT);
-
+    steve.w_last[steve.current_f] += 1;
     steve.current_w++;
     return 0;
 }

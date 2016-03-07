@@ -26,7 +26,8 @@ struct znotify
 	int **wd;
 	int current_f; 
 	int current_w;
-	int *w_count; //Keep track of how many watch descriptors
+	int *w_count; //Keep track of max number of watch descriptors
+	int *w_last;  //Keep track of last watch descriptor in use
 	char ***path;
 };
 
