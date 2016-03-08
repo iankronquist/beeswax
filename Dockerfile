@@ -7,6 +7,7 @@ RUN apt-get -y install apache2 libapache2-mod-auth-mysql php5-mysql curl
 RUN curl $wordpress_url > wordpress.tar.gz
 RUN tar xzf wordpress.tar.gz -C /
 RUN cp -r wordpress/* /var/www/html
+RUN rm wordpress.tar.gz
 
 COPY ./wp-config.php /var/www/html/wp-config.php
 EXPOSE 80
