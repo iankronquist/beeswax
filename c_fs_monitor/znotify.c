@@ -58,14 +58,14 @@ int main(int argc, char* argv[])
 
 	short options[5] = {0,0,0,1,0};
 	struct pollfd *poll_fd; 
-	if(argc == 1)
+	if(argc <= 2)
 	{
 		fprintf(stderr,"\nNot Enough Arguments");
 		help_menu(argv[0]);
 		exit(EXIT_FAILURE);
 	}
 	
-	while( (i = getopt(argc, argv, "hanew:t:")) != -1)
+	while( (i = getopt(argc, argv, "hanewt")) != -1)
 	{
 		switch(i)
 		{
@@ -180,8 +180,12 @@ int main(int argc, char* argv[])
 			}
 		}	
 	}
+	else
+	{
+		exit(EXIT_FAILURE);
+	}
 	
-//Poll Section - 2 sections-> 0 for Don't Add 1 for add
+//Poll Section 
 	for(i = 0; i < steve.arguments; i++)
 	{
 		poll_fd[i].fd = steve.fd[i];
@@ -267,6 +271,7 @@ handle_events(int fd, int *wd,int add_child )
     const struct inotify_event *event;
     char pathname_buffer[PATH_LIMIT];
     int i;
+    int length;
     ssize_t len;
     char *ptr;
     const char *mask_ptr = NULL;
@@ -331,8 +336,23 @@ handle_events(int fd, int *wd,int add_child )
 		{	
 			strcpy(pathname_buffer,  steve.path[steve.current_f]
 							[steve.current_w]);
+			length = strlen(pathname_buffer);
+			if(pathname_buffer[length - 1] != '/')
+			{
+				pathname_buffer[length] = '/';
+				pathname_buffer[length + 1] = '\0';
+			}
 			strcat(pathname_buffer,event->name);
-			fprintf(stderr,"\nPathname: %s\n",pathname_buffer);
+		//	fprintf(stderr,"\nPathname: %s\n",pathname_buffer);
+			//watch_this relies on current_w
+			steve.current_w = steve.w_last[steve.current_f] + 1;
+			if(watch_this(pathname_buffer) == -1)
+			{
+				fprintf(stderr,"\nFailed to add: %s",
+							pathname_buffer);
+			}
+			//watch_this will increment current_w
+			steve.current_w = i;
 		}
             }
             else if (IN_ACCESS & event->mask)
@@ -496,6 +516,7 @@ static int watch_this(const char *pathname)
     int *temp = NULL;
     char **temp_paths = NULL;
     int fd;
+
     if(steve.w_count[steve.current_f] <= steve.current_w)
     {
         temp = realloc(steve.wd[steve.current_f],
