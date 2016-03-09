@@ -451,11 +451,12 @@ static void json_safe(const char * source, char * destination, int size)
 static void print_json(const char * date, const char * event,const char *directory,
                 const char *name, const char *type)
 {
-    char safe_name[NAME_MAX *2 +1];
+    char *safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
     
     json_safe(name,safe_name,strlen(name));
     
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
+    free(safe_name);
 }
               
 /*************************************************************************
@@ -553,7 +554,9 @@ static int watch_this(const char *pathname)
     // Get JSON safe pathname
     steve.path[steve.current_f][steve.current_w] = 
 				calloc(PATH_LIMIT,sizeof(char));
-    json_safe(pathname,steve.path[steve.current_f][steve.current_w],PATH_LIMIT);
+    json_safe(pathname,
+		steve.path[steve.current_f][steve.current_w],
+		strlen(pathname));
     steve.w_last[steve.current_f] += 1;
     steve.current_w++;
     return 0;
