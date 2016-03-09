@@ -3,6 +3,7 @@ package filter
 import (
 	"encoding/json"
 	"strings"
+	"io/ioutil"
 )
 
 type FilterConfig struct {
@@ -21,9 +22,22 @@ func GetFilterConfig(fileName string) (FilterConfig, error) {
 	4. Return the config object.
 	If there is an error, return it.
 	*/
+
+	config := FilterConfig{}
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return config, err
+	}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return config, err
+	}
+
+	return config, nil
+	
 	// Dummy implementation for testing. Remove later
-	newFilterConf := FilterConfig{Ignore: []string{"/dev/"}}
-	return newFilterConf, nil
+	// newFilterConf := FilterConfig{Ignore: []string{"/dev/"}}
+	// return newFilterConf, nil
 }
 
 type Filter interface {
