@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <ftw.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,13 +35,16 @@ const char *folder_cstring              = "FOLDER";
 const char *file_cstring                = "FILE";
 
 struct znotify steve;
+struct pollfd *poll_fd; 
 int mask;
 
+static void signal_handler(int signo);
 static void cleanup();
 static void handle_events(int fd, int *wd, int add_child);
 static void json_safe(const char * source, char * destination, int size);
-static void print_json(const char * date, const char * event,const char *directory,
-                       const char *name, const char *type);
+static void print_json(const char * date, const char * event,
+			const char *directory,const char *name, 
+			const char *type);
 static void fetch_argument(int *i, int argc, char *argv[], char **voltar);
 static nfds_t count_arguments(int argc, char *argv[]);
 static int watch_this(const char *pathname);
@@ -57,8 +61,7 @@ int main(int argc, char* argv[])
 	char *file_name;
 
 	short options[5] = {0,0,0,1,0};
-	struct pollfd *poll_fd; 
-	if(argc <= 2)
+	if(argc < 2)
 	{
 		fprintf(stderr,"\nNot Enough Arguments");
 		help_menu(argv[0]);
@@ -98,7 +101,8 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 				break;
 			default:
-				fprintf(stderr,"\nInvalid Choice: %s -h",argv[0]);
+				fprintf(stderr,"\nInvalid Choice: %s -h",
+					argv[0]);
 				exit(EXIT_FAILURE);
 		}
 	}
@@ -132,6 +136,7 @@ int main(int argc, char* argv[])
 	}
 
 	atexit(cleanup);
+	signal(SIGINT,signal_handler);
 
 	if(options[OPT_N]) //Report Only New Directories
 	{
@@ -222,6 +227,17 @@ int main(int argc, char* argv[])
 }
 
 /*****************************************************************************
+ * Function: 	   signal_handler 
+ * Description:	   Catches SIGINT->defined in main
+ * Parameters:     Signal Number
+ * Pre-Conditions: Control+C must be entered
+ * Post-Conditions:Program ends after calling cleanup, defined in main
+ ****************************************************************************/
+static void signal_handler(int signo)
+{
+	exit(EXIT_SUCCESS);
+}
+/*****************************************************************************
  * Function: 	   cleanup 
  * Description:    Frees all memory used by the structure znotify
  *		   Note: Used to help with valgrind
@@ -243,6 +259,7 @@ static void cleanup()
 		}
 		free(steve.path[i]);
 	}
+	free(poll_fd);
 	free(steve.path);
 	free(steve.w_last);
 	free(steve.wd);
@@ -452,9 +469,10 @@ static void print_json(const char * date, const char * event,const char *directo
                 const char *name, const char *type)
 {
     char *safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
-    
-    json_safe(name,safe_name,strlen(name));
-    
+    if(strcmp(name,"") != 0)
+    {
+	json_safe(name,safe_name,strlen(name));
+    }
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
     free(safe_name);
 }
@@ -484,11 +502,12 @@ static void fetch_argument(int *i, int argc, char *argv[], char **voltar)
 }
 
 /*****************************************************************************
- * Function: 
- * Description:
- * Parameters: 
- * Pre-Conditions:
- * Post-Conditions: 
+ * Function: 	   count_arguments
+ * Description:	   Counts arguments in the command line that do not begin
+ *		   with '-'
+ * Parameters: 	   Number of arguments, string of arguments
+ * Pre-Conditions: None
+ * Post-Conditions:Return count of arguments without a dash at the beginning
  ****************************************************************************/
 static nfds_t count_arguments(int argc, char *argv[])
 {
@@ -503,14 +522,17 @@ static nfds_t count_arguments(int argc, char *argv[])
     }
     return count;
 }
-
             
 /*************************************************************************
- * Function: 	
- * Description: 
- * Parameters:  
- * Pre-Conditions:
- * Post-Conditions: 
+ * Function: 	   watch_this
+ * Description:    Adds an inotify instance to a file descriptor. 
+ * Parameters:     A pathname
+ * Pre-Conditions: Needs the znotify struct, the current_w and current_f
+ *		   needs to be defined
+ * Post-Conditions:Additional inotify instance with the w_last increased
+ *	           If additional space needs to increase, w_count will 
+ *		   increase be INCREMENT as defined in znotify.h. The
+ *		   pathname will be entered into the path variable	   
 *************************************************************************/
 static int watch_this(const char *pathname)
 {
@@ -596,7 +618,7 @@ static int walker(const char *pathname, const struct stat *sbuf,
 *************************************************************************/
 static void help_menu(char * file)
 {
-	fprintf(stderr,"\nGeneral: %s [w or t] [a] [n or e] [directories to be watched]",file);
+	fprintf(stderr,"General: %s [w or t] [a] [n or e] [directories to be watched]",file);
 	fprintf(stderr,"\n\t-w Watch Only, do NOT Traverse");
 	fprintf(stderr,"\n\t-t Traverse and Add Child Directories to Watch List");
 	fprintf(stderr,"\n\t-h Display this Help Menu");
