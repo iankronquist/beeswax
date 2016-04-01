@@ -40,10 +40,10 @@ type NetMonitor struct {
 // Memoize this. It's kind of expensive to get.
 var dockerContainerIds = []string{}
 
-func runCommandAndSlurpOutput(commandName string, args []string) ([]string, error) {
-	command := exec.Command(commandName, args...)
-	fmt.Print("Running the command: ")
-	fmt.Println(commandName, args)
+func runCommandAndSlurpOutput(commandname string, args []string) ([]string, error) {
+	command := exec.Command(commandname, args...)
+	fmt.Print("running the command: ")
+	fmt.Println(commandname, args)
 	stdout, err := command.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -58,22 +58,25 @@ func runCommandAndSlurpOutput(commandName string, args []string) ([]string, erro
 	defer command.Wait()
 
 	output := []string{}
-	stdoutReader := bufio.NewReader(stdout)
-
-	fetch := true
-	line := []byte{}
-	for fetch {
-		partial_line, f, err := stdoutReader.ReadLine()
-		fetch = f
-		line = append(line, partial_line...)
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
+	stdoutreader := bufio.NewReader(stdout)
+	slurp := true
+	for slurp {
+		fetch := true
+		line := []byte{}
+		for fetch {
+			partial_line, f, err := stdoutreader.ReadLine()
+			fetch = f
+			line = append(line, partial_line...)
+			if err == io.EOF {
+				slurp = false
+				break
+			} else if err != nil {
+				return nil, err
+			}
 		}
-	}
-	if len(line) > 0 {
-		output = append(output, string(line))
+		if len(line) > 0 {
+			output = append(output, string(line))
+		}
 	}
 	return output, nil
 }
