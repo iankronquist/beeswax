@@ -40,38 +40,53 @@ type NetMonitor struct {
 // Memoize this. It's kind of expensive to get.
 var dockerContainerIds = []string{}
 
+
+func runCommandAndSlurpOutput(commandName string, args []string) ([]string, error) {
+	command := exec.Command(commandName, args...)
+	fmt.Print("Running the command: ")
+	fmt.Println(commandName, args)
+	stdout, err := command.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	stderr, err := command.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	go io.Copy(os.Stderr, stderr)
+	command.Start()
+	defer command.Wait()
+
+	output := []string{}
+	stdoutReader := bufio.NewReader(stdout)
+
+	fetch := true
+	line := []byte{}
+	for fetch {
+		partial_line, f, err := stdoutReader.ReadLine()
+		fetch = f
+		line = append(line, partial_line...)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+	}
+	if len(line) > 0 {
+		output = append(output, string(line))
+	}
+	fmt.Println("5")
+	return output, nil
+}
+
 func getDockerContainerIds(dockerComposeName string) []string {
 	if len(dockerContainerIds) != 0 {
 		return dockerContainerIds
 	}
-	dockerComposeCommand := exec.Command(dockerComposeName, "ps", "-q")
-	outpipe, err := dockerComposeCommand.StdoutPipe()
+	ids, err := runCommandAndSlurpOutput("docker-compose", []string{"ps", "-q"})
 	if err != nil {
 		panic(err)
-	}
-
-	dockerComposeCommand.Start()
-	defer dockerComposeCommand.Wait()
-
-	ids := []string{}
-	stdoutReader := bufio.NewReader(outpipe)
-
-	for {
-		fetch := true
-		line := []byte{}
-		for fetch {
-			partial_line, f, err := stdoutReader.ReadLine()
-			fetch = f
-			line = append(line, partial_line...)
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				panic(err)
-			}
-		}
-		if string(line) != "" {
-			ids = append(ids, string(line))
-		}
 	}
 	dockerContainerIds = ids
 	return ids
@@ -87,8 +102,14 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		panic(err)
 	}
 
-	dockerComposeCommand.Start()
 	defer dockerComposeCommand.Wait()
+
+	stderr, err := dockerComposeCommand.StderrPipe()
+	if err != nil {
+		log.Println("Could not open the docker inspect stderr pipe")
+		panic(err)
+	}
+	go io.Copy(os.Stderr, stderr)
 
 	procIds := []string{}
 	stdoutReader := bufio.NewReader(outpipe)
