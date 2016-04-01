@@ -2,8 +2,8 @@ package filter
 
 import (
 	"encoding/json"
-	"strings"
 	"io/ioutil"
+	"strings"
 )
 
 type FilterConfig struct {
@@ -34,7 +34,7 @@ func GetFilterConfig(fileName string) (FilterConfig, error) {
 	}
 
 	return config, nil
-	
+
 	// Dummy implementation for testing. Remove later
 	// newFilterConf := FilterConfig{Ignore: []string{"/dev/"}}
 	// return newFilterConf, nil

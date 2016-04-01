@@ -40,7 +40,6 @@ type NetMonitor struct {
 // Memoize this. It's kind of expensive to get.
 var dockerContainerIds = []string{}
 
-
 func runCommandAndSlurpOutput(commandName string, args []string) ([]string, error) {
 	command := exec.Command(commandName, args...)
 	fmt.Print("Running the command: ")
@@ -76,7 +75,6 @@ func runCommandAndSlurpOutput(commandName string, args []string) ([]string, erro
 	if len(line) > 0 {
 		output = append(output, string(line))
 	}
-	fmt.Println("5")
 	return output, nil
 }
 
