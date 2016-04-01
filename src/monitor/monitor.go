@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	_ "regexp"
+	"strings"
 )
 
 /* The Monitor interface defines a series of methods which will be defined on
@@ -81,6 +82,46 @@ func runCommandAndSlurpOutput(commandname string, args []string) ([]string, erro
 	return output, nil
 }
 
+func runCommandAndChannelOutput(commandname string, args []string, output chan<- []byte) error {
+	command := exec.Command(commandname, args...)
+	fmt.Print("running the command: ")
+	fmt.Println(commandname, args)
+	stdout, err := command.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := command.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	go io.Copy(os.Stderr, stderr)
+	command.Start()
+	defer command.Wait()
+
+	stdoutreader := bufio.NewReader(stdout)
+	slurp := true
+	for slurp {
+		fetch := true
+		line := []byte{}
+		for fetch {
+			partial_line, f, err := stdoutreader.ReadLine()
+			fetch = f
+			line = append(line, partial_line...)
+			if err == io.EOF {
+				slurp = false
+				break
+			} else if err != nil {
+				return err
+			}
+		}
+		if len(line) > 0 {
+			output <- line
+		}
+	}
+	return nil
+}
+
 func getDockerContainerIds(dockerComposeName string) []string {
 	if len(dockerContainerIds) != 0 {
 		return dockerContainerIds
@@ -94,78 +135,34 @@ func getDockerContainerIds(dockerComposeName string) []string {
 }
 
 func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
+
 	ids := getDockerContainerIds(dockerComposeName)
 	arguments := []string{"inspect", "-f", "'{{ .State.Pid }}'"}
 	arguments = append(arguments, ids...)
-	dockerComposeCommand := exec.Command("docker", arguments...)
-	outpipe, err := dockerComposeCommand.StdoutPipe()
+	output, err := runCommandAndSlurpOutput("docker", arguments)
 	if err != nil {
 		panic(err)
 	}
-
-	defer dockerComposeCommand.Wait()
-
-	stderr, err := dockerComposeCommand.StderrPipe()
-	if err != nil {
-		log.Println("Could not open the docker inspect stderr pipe")
-		panic(err)
-	}
-	go io.Copy(os.Stderr, stderr)
-
-	procIds := []string{}
-	stdoutReader := bufio.NewReader(outpipe)
-	for {
-		fetch := true
-		line := []byte{}
-		for fetch {
-			partial_line, f, err := stdoutReader.ReadLine()
-			fetch = f
-			line = append(line, partial_line...)
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				panic(err)
-			}
+	for _, procId := range output {
+		// Replace all quotes
+		scrubbedProcId := strings.Replace(procId, "'", "", -1)
+		// TODO: Check for ids named 0, which means no proc id
+		err := setSymlink(scrubbedProcId, scrubbedProcId)
+		if err != nil {
+			panic(err)
 		}
-		if string(line) != "" {
-			procIds = append(procIds, string(line))
-			err = setSymlink(string(line), "/var/run/netns/")
-			if err != nil {
-				panic(err)
-			}
-			go startIPProcess(messages, string(line), "tcpdump", "")
-		}
+		go startIPProcess(messages, scrubbedProcId, "tcpdump", "")
 	}
+
 }
 
 func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 	watcherArgs ...string) {
 	arguments := []string{"netns", "exec", procId, watcherName}
 	arguments = append(arguments, watcherArgs...)
-	netWatcherCommand := exec.Command("ip", arguments...)
-	outpipe, err := netWatcherCommand.StdoutPipe()
+	err := runCommandAndChannelOutput("ip", arguments, messages)
 	if err != nil {
 		panic(err)
-	}
-
-	netWatcherCommand.Start()
-	defer netWatcherCommand.Wait()
-
-	stdoutReader := bufio.NewReader(outpipe)
-	for {
-		fetch := true
-		line := []byte{}
-		for fetch {
-			partial_line, f, err := stdoutReader.ReadLine()
-			fetch = f
-			line = append(line, partial_line...)
-			if err == io.EOF {
-				break
-			} else if err != nil {
-				panic(err)
-			}
-		}
-		messages <- line
 	}
 }
 
