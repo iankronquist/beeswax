@@ -69,12 +69,14 @@ func ReadConfig(fileName string) (Config, error) {
 func StartMonitor(c Config) {
 	FSMessages := make(chan []byte)
 	FSMessagesOut := make(chan []byte)
-	//networkMessages := make(chan string)
+	networkMessages := make(chan []byte)
 	//execMessages := make(chan string)
+	netMonitor := monitor.NetMonitor{}
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
+	go netMonitor.Start(networkMessages, c.DockerComposeName)
 	go fsMonitor.Start(FSMessages, c.DockerComposeName)
 	go filter.StartFilterStream(FSMessagesOut, FSMessages)
-	outputs := [](chan []byte){FSMessagesOut}
+	outputs := [](chan []byte){FSMessagesOut, networkMessages}
 	go reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, outputs)
 	for {
 		message := <-FSMessagesOut
