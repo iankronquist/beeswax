@@ -2,6 +2,9 @@
 .*.swp
 senior-project-experiment
 
+c_fs_monitor/a.out
 c_fs_monitor/inotify
 c_fs_monitor/test_fs_monitor
+
+cproc_monitor/a.out
 .DS_Store
