@@ -167,7 +167,12 @@ func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 }
 
 func setSymlink(procId string, destination string) error {
-	err := os.Symlink("/proc/"+procId+"/ns/net", "/var/run/netns/"+procId)
+	nameSpaceDir := "/var/run/netns/"
+	err := os.MkdirAll(nameSpaceDir, 0777)
+	if err != nil {
+		return err
+	}
+	err = os.Symlink("/proc/"+procId+"/ns/net", nameSpaceDir+destination)
 	return err
 }
 
