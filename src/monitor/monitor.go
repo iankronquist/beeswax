@@ -151,7 +151,7 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		if err != nil {
 			panic(err)
 		}
-		go startIPProcess(messages, scrubbedProcId, "tcpdump", "")
+		go startIPProcess(messages, scrubbedProcId, "tcpdump","-tt","-n","-i","any")
 	}
 
 }
@@ -253,11 +253,11 @@ func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		line := []byte{}
 		for fetch {
 			partial_line, f, err := stdoutReader.ReadLine()
-			fetch = f
-			line = append(line, partial_line...)
 			if err != nil {
 				panic(err)
 			}
+			fetch = f
+			line = append(line, partial_line...)
 		}
 		messages <- line
 
