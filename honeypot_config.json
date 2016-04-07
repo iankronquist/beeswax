@@ -3,7 +3,7 @@
   "docker compose name": "docker-compose",
   "container names": ["mysql", "wordpress"],
 	"mhn host": "hpfriends.honeycloud.net",
-	"mhn port": "2000",
+	"mhn port": 2000,
 	"mhn identifier": "You should fill this in",
 	"mhn authorization": "t0ps3cr3t"
 }
