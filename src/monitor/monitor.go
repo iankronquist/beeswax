@@ -8,10 +8,19 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	_ "regexp"
+	"regexp"
 	"strings"
+	"encoding/json"
 )
 
+type ipdata struct{
+	Epoch		[]byte `json:"Epoch"`
+	SourceIP	[]byte `json:"SourceIP"`
+	SourcePort	[]byte `json:"SourcePort"`
+	ReceiveIP	[]byte `json:"ReceiveIP"`
+	ReceivePort []byte `json:"ReceivePort"`
+	
+}
 /* The Monitor interface defines a series of methods which will be defined on
  * monitor structs. The Start method takes a channel to send messages over,
  * back to the configurator. The Stop method kills the process which is
@@ -143,6 +152,8 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	if err != nil {
 		panic(err)
 	}
+	nmProcessorChan := make(chan []byte)
+	go networkMonitorProcessor(messages, nmProcessorChan)
 	for _, procId := range output {
 		// Replace all quotes
 		scrubbedProcId := strings.Replace(procId, "'", "", -1)
@@ -151,11 +162,32 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		if err != nil {
 			panic(err)
 		}
-		go startIPProcess(messages, scrubbedProcId, "tcpdump","-tt","-n","-i","any")
+		go startIPProcess(nmProcessorChan, scrubbedProcId, "tcpdump","-tt","-n","-i","any")
 	}
-
 }
-
+func networkMonitorProcessor(sending chan<-[]byte,receiving <-chan[]byte)(error){
+	platform := []byte{}
+	carlson := []byte{}
+	pattern := "(\\d+\\.\\d+) IP (\\d{,3}\\.\\d{,3}\\.\\d{,3}\\.\\d{,3})\\.(\\d+) > (\\d{,3}\\.\\d{,3}\\.\\d{,3}\\.\\d{,3})\\.(\\d+)"
+	compiled_pattern,err := regexp.Compile(pattern)
+	if err != nil{
+		return err
+	}
+	for{
+		platform = <- receiving
+		matches := compiled_pattern.FindSubmatch(platform)
+		carl := ipdata{Epoch:matches[0],SourceIP:matches[1],
+						SourcePort:matches[2],ReceiveIP:matches[3],
+						ReceivePort:matches[4]}
+		carlson,err = json.Marshal(carl)
+		if err != nil{
+			return err
+		}
+		sending<-carlson
+	}
+	
+	return nil
+}
 func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 	watcherArgs ...string) {
 	arguments := []string{"netns", "exec", procId, watcherName}
