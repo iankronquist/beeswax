@@ -48,8 +48,9 @@ type NetMonitor struct {
 	ContainerIds []string
 }
 
-// Memoize this. It's kind of expensive to get.
+// Memoize these. They're kind of expensive to get.
 var dockerContainerIds = []string{}
+var dockerContainerProcessIds = []string{}
 
 func runCommandAndSlurpOutput(commandname string, args []string) ([]string, error) {
 	command := exec.Command(commandname, args...)
@@ -144,31 +145,44 @@ func getDockerContainerIds(dockerComposeName string) []string {
 	return ids
 }
 
-func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
-
+func getDockerContainerProcessIds(dockerComposeName string) []string {
+	// Memoize this function
+	if len(dockerContainerProcessIds) > 0 {
+		return dockerContainerProcessIds
+	}
 	ids := getDockerContainerIds(dockerComposeName)
 	arguments := []string{"inspect", "-f", "'{{ .State.Pid }}'"}
 	arguments = append(arguments, ids...)
 	output, err := runCommandAndSlurpOutput("docker", arguments)
-	if err != nil {
-		panic(err)
-	}
-	nmProcessorChan := make(chan []byte)
-	go networkMonitorProcessor(messages, nmProcessorChan)
-	for _, procId := range output {
+	for i, out := range output {
 		// FIXME: do we want to throw an error instead?
-		if procId == "'0'" {
-			fmt.Println("Container isn't running")
+		if out == "'0'" {
+			fmt.Println("Container isn't running: ", out)
+			output = append(output[:i], output[i+1:]...)
 			continue
 		}
 		// Replace all quotes
-		scrubbedProcId := strings.Replace(procId, "'", "", -1)
-		// TODO: Check for ids named 0, which means no proc id
-		err := setSymlink(scrubbedProcId, scrubbedProcId)
+		scrubbedProcId := strings.Replace(out, "'", "", -1)
+		output[i] = scrubbedProcId
+	}
+
+	if err != nil {
+		panic(err)
+	}
+	dockerContainerProcessIds = output
+	return output
+}
+
+func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
+	output := getDockerContainerProcessIds(dockerComposeName)
+	nmProcessorChan := make(chan []byte)
+	go networkMonitorProcessor(messages, nmProcessorChan)
+	for _, procId := range output {
+		err := setSymlink(procId, procId)
 		if err != nil {
 			panic(err)
 		}
-		go startIPProcess(nmProcessorChan, scrubbedProcId, "tcpdump", "-tt", "-n", "-i", "any", "-l")
+		go startIPProcess(nmProcessorChan, procId, "tcpdump", "-tt", "-n", "-i", "any", "-l")
 	}
 }
 func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) error {
@@ -237,48 +251,16 @@ func setSymlink(procId string, destination string) error {
 	return err
 }
 
-/* This function is going to need some comments describing why we chose this
- * approach, because it will be hairy.
- * FIXME: Break out functionality into multiple functions so we can test this
- * easily!
+/* Returns the root directories of all of the Docker containers being monitored
+ * as a list of strings.
  */
 func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
-	ids := getDockerContainerIds(dockerComposeName)
-	/*
-		dockerInfoCommand := exec.Command("docker", "info")
-		infoOutPipe, err := dockerInfoCommand.StdoutPipe()
-
-		if err != nil {
-			panic(err)
-		}
-
-		dockerInfoCommand.Start()
-		defer dockerInfoCommand.Wait()
-
-		infoBuf, err := ioutil.ReadAll(infoOutPipe)
-
-		if err != nil {
-			panic(err)
-		}
-
-		info := string(infoBuf)
-
-		re := regexp.MustCompile("Docker Root Dir: (.*)")
-
-		submatch := re.FindStringSubmatch(info)
-
-		if len(submatch) < 2 {
-			fmt.Println(submatch, info)
-			panic("Couldn't find the docker root directory")
-		}
-		dockerRootPath := submatch[1]
-	*/
-	dockerRootPath := "/var/lib/docker/aufs"
-
-	for i := 0; i < len(ids); i++ {
-		ids[i] = dockerRootPath + "/mnt/" + ids[i]
+	pids := getDockerContainerProcessIds(dockerComposeName)
+	roots := make([]string, len(pids))
+	for i, pid := range pids {
+		roots[i] = "/proc/" + pid + "/root"
 	}
-	return ids
+	return roots
 }
 
 /* Start the process running on the honeypot host to monitor the Docker
