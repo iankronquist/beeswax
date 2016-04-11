@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/socket.h>
 #include <linux/netlink.h>
 #include <linux/connector.h>
@@ -6,9 +7,13 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <limits.h>
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
+
 
 /*
  * connect to netlink
@@ -74,11 +79,82 @@ static int set_proc_ev_listen(int nl_sock, bool enable)
     return 0;
 }
 
+// FIXME we need to depend on log_10(PID_MAX) in /proc/sys/kernel/pid_max
+pid_t get_pid_max() {
+    return 32768;
+}
+
+// Return the length of a string necessary
+size_t max_pid_length_base_10() {
+    pid_t max_pid = get_pid_max();
+    assert(max_pid > 0);
+    return floor(log10(abs(max_pid))) + 1;
+}
+
+// Slow af
+bool process_is_in_docker_ns(int argc, const char **docker_ids,
+        pid_t child_pid) {
+    int i;
+    size_t max_pid_length = max_pid_length_base_10();
+    // Build the path for the /proc/PID/cgroup directory
+    char buff[13+max_pid_length+1];
+    snprintf(buff, PATH_MAX, "/proc/%d/cgroup",
+             child_pid);
+
+    // Open the file and get its size
+    FILE *proc_file = fopen(buff, "r");
+    if (proc_file == NULL) {
+        fprintf(stderr,
+                "The entry under '%s' for the process %d isn't available\n",
+                buff, child_pid);
+        perror("Error opening file");
+        return false;
+    }
+    // Create a buffer and slurp the whole file into it. The file probably
+    // isn't too big.
+    size_t slurp_size = 1024;
+    char *proc_cgroup = malloc(slurp_size);
+    while (true) {
+        // Sluuuurp
+        fread(proc_cgroup, slurp_size, 1, proc_file);
+        // If there was an error, clean up
+        if (ferror(proc_file)) {
+            perror("Failed to read /proc/PID/cgroup file");
+            fclose(proc_file);
+            free(proc_cgroup);
+            return false;
+        }
+        // If we're not at the end of the file try again, otherwise break.
+        if (!feof(proc_file)) {
+            slurp_size += 1024;
+            proc_cgroup = realloc(proc_cgroup, slurp_size);
+        } else {
+            break;
+        }
+    }
+
+    fclose(proc_file);
+
+    // Iterate through the given ids and check to see if they're in the file.
+    for (i = 0; i < argc; ++i) {
+        fprintf(stderr, "cross");
+        // If we find one...
+        if (strstr(proc_cgroup, docker_ids[i]) != NULL) {
+            // Clean up and return true
+            free(proc_cgroup);
+            return true;
+        }
+    }
+    // If we didn't find any, clean up and return false
+    free(proc_cgroup);
+    return false;
+}
+
 /*
  * handle a single process event
  */
 static volatile bool need_exit = false;
-static int handle_proc_ev(int nl_sock)
+static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
 {
     int rc;
     struct __attribute__ ((aligned(NLMSG_ALIGNTO))) {
@@ -99,11 +175,16 @@ static int handle_proc_ev(int nl_sock)
             perror("netlink recv");
             return -1;
         }
+
         switch (nlcn_msg.proc_ev.what) {
             case PROC_EVENT_NONE:
                 printf("set mcast listen ok\n");
                 break;
             case PROC_EVENT_FORK:
+                if (!process_is_in_docker_ns(argc, docker_ids,
+                            nlcn_msg.proc_ev.event_data.fork.parent_pid)) {
+                    continue;
+                }
                 printf("fork: parent tid=%d pid=%d -> child tid=%d pid=%d\n",
                         nlcn_msg.proc_ev.event_data.fork.parent_pid,
                         nlcn_msg.proc_ev.event_data.fork.parent_tgid,
@@ -111,11 +192,20 @@ static int handle_proc_ev(int nl_sock)
                         nlcn_msg.proc_ev.event_data.fork.child_tgid);
                 break;
             case PROC_EVENT_EXEC:
+                if (!process_is_in_docker_ns(argc, docker_ids,
+                            nlcn_msg.proc_ev.event_data.exec.process_pid)) {
+                    continue;
+                }
+
                 printf("exec: tid=%d pid=%d\n",
                         nlcn_msg.proc_ev.event_data.exec.process_pid,
                         nlcn_msg.proc_ev.event_data.exec.process_tgid);
                 break;
             case PROC_EVENT_UID:
+                if (!process_is_in_docker_ns(argc, docker_ids,
+                            nlcn_msg.proc_ev.event_data.id.process_pid)) {
+                    continue;
+                }
                 printf("uid change: tid=%d pid=%d from %d to %d\n",
                         nlcn_msg.proc_ev.event_data.id.process_pid,
                         nlcn_msg.proc_ev.event_data.id.process_tgid,
@@ -123,6 +213,10 @@ static int handle_proc_ev(int nl_sock)
                         nlcn_msg.proc_ev.event_data.id.e.euid);
                 break;
             case PROC_EVENT_GID:
+                if (!process_is_in_docker_ns(argc, docker_ids,
+                            nlcn_msg.proc_ev.event_data.id.process_pid)) {
+                    continue;
+                }
                 printf("gid change: tid=%d pid=%d from %d to %d\n",
                         nlcn_msg.proc_ev.event_data.id.process_pid,
                         nlcn_msg.proc_ev.event_data.id.process_tgid,
@@ -130,6 +224,10 @@ static int handle_proc_ev(int nl_sock)
                         nlcn_msg.proc_ev.event_data.id.e.egid);
                 break;
             case PROC_EVENT_EXIT:
+                if (!process_is_in_docker_ns(argc, docker_ids,
+                            nlcn_msg.proc_ev.event_data.exit.process_pid)) {
+                    continue;
+                }
                 printf("exit: tid=%d pid=%d exit_code=%d\n",
                         nlcn_msg.proc_ev.event_data.exit.process_pid,
                         nlcn_msg.proc_ev.event_data.exit.process_tgid,
@@ -151,6 +249,11 @@ static void on_sigint(int unused)
 
 int main(int argc, const char *argv[])
 {
+    // If we didn't get any docker ids as arguments, exit
+    if (argc <= 1) {
+        fprintf(stderr, "Usage: %s dockerids...\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
     int nl_sock;
     int rc = EXIT_SUCCESS;
 
@@ -167,7 +270,8 @@ int main(int argc, const char *argv[])
         goto out;
     }
 
-    rc = handle_proc_ev(nl_sock);
+    // Send everything except the first argument
+    rc = handle_proc_ev(nl_sock, argc-1, &argv[1]);
     if (rc == -1) {
         rc = EXIT_FAILURE;
         goto out;
