@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"encoding/json"
 	"io/ioutil"
 	"strings"
@@ -70,7 +71,9 @@ func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan 
 		zid := ZachsInotifyData{}
 		err := json.Unmarshal(message, &zid)
 		if err != nil {
-			panic(err)
+			fmt.Println("Error unmarshalling message: ", string(message))
+			fmt.Println("Silently dropping the message")
+			//panic(err)
 		}
 		notblacklisted := true
 		for _, i := range c.Ignore {
