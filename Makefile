@@ -2,7 +2,7 @@ CC=gcc
 
 all: senior-project-experiment c_fs_monitor/znotify cproc_monitor/proc
 
-senior-project-experiment: main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
+senior-project-experiment: deps main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
 	go build
 
 c_fs_monitor/test_fs_monitor: c_fs_monitor/test_fs_monitor.c
@@ -14,6 +14,9 @@ c_fs_monitor/znotify: c_fs_monitor/znotify.c
 cproc_monitor/proc: cproc_monitor/proc.c
 	${CC} -o cproc_monitor/proc cproc_monitor/proc.c -lm
 
+deps:
+	go get
+
 test: c_fs_monitor/test_fs_monitor
 	go test ./src/configurator
 	go test ./src/monitor
@@ -23,3 +26,5 @@ test: c_fs_monitor/test_fs_monitor
 clean:
 	rm -f senior-project-experiment c_fs_monitor/znotify \
 		c_fs_monitor/test_fs_monitor
+
+.PHONY: deps
