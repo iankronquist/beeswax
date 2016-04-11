@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,17 +12,16 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-	"encoding/json"
 )
 
-type ipdata struct{
-	Epoch		string `json:"Epoch"`
-	SourceIP	string `json:"SourceIP"`
-	SourcePort	string `json:"SourcePort"`
-	ReceiveIP	string `json:"ReceiveIP"`
+type ipdata struct {
+	Epoch       string `json:"Epoch"`
+	SourceIP    string `json:"SourceIP"`
+	SourcePort  string `json:"SourcePort"`
+	ReceiveIP   string `json:"ReceiveIP"`
 	ReceivePort string `json:"ReceivePort"`
-	
 }
+
 /* The Monitor interface defines a series of methods which will be defined on
  * monitor structs. The Start method takes a channel to send messages over,
  * back to the configurator. The Stop method kills the process which is
@@ -171,33 +171,33 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		go startIPProcess(nmProcessorChan, scrubbedProcId, "tcpdump", "-tt", "-n", "-i", "any", "-l")
 	}
 }
-func networkMonitorProcessor(sending chan<-[]byte,receiving <-chan[]byte)(error){
+func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) error {
 	platform := []byte{}
 	carlson := []byte{}
 	pattern := "(\\d+\\.\\d+) IP (\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\.(\\d+) > (\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\.(\\d+)"
-	compiled_pattern,err := regexp.Compile(pattern)
-	if err != nil{
+	compiled_pattern, err := regexp.Compile(pattern)
+	if err != nil {
 		return err
 	}
-	for{
-		platform = <- receiving
+	for {
+		platform = <-receiving
 		matches := compiled_pattern.FindSubmatch(platform)
 		fmt.Println(string(matches[2]), string(matches[1]))
 		carl := ipdata{
-			Epoch: string(matches[1]),
-			SourceIP: string(matches[2]),
-			SourcePort: string(matches[3]),
-			ReceiveIP: string(matches[4]),
+			Epoch:       string(matches[1]),
+			SourceIP:    string(matches[2]),
+			SourcePort:  string(matches[3]),
+			ReceiveIP:   string(matches[4]),
 			ReceivePort: string(matches[5]),
 		}
-		carlson,err = json.Marshal(carl)
-		if err != nil{
+		carlson, err = json.Marshal(carl)
+		if err != nil {
 			return err
 		}
 		fmt.Println("Sending json: ", string(carlson))
-		sending<-carlson
+		sending <- carlson
 	}
-	
+
 	return nil
 }
 func startIPProcess(messages chan<- []byte, procId string, watcherName string,
@@ -212,8 +212,8 @@ func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 
 func setSymlink(procId string, destination string) error {
 	nameSpaceDir := "/var/run/netns/"
-	target := nameSpaceDir+destination
-	source := "/proc/"+procId+"/ns/net"
+	target := nameSpaceDir + destination
+	source := "/proc/" + procId + "/ns/net"
 
 	err := os.MkdirAll(nameSpaceDir, 0777)
 	if err != nil {
