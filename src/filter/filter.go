@@ -71,7 +71,8 @@ func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan 
 		zid := ZachsInotifyData{}
 		err := json.Unmarshal(message, &zid)
 		if err != nil {
-			fmt.Println("Error unmarshalling message: ", string(message))
+			fmt.Println("Error unmarshalling message: ", string(message),
+				err.Error(), message)
 			fmt.Println("Silently dropping the message")
 			//panic(err)
 		}
