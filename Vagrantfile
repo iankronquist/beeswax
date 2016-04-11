@@ -12,7 +12,7 @@ Vagrant.configure(2) do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "puppetlabs/ubuntu-14.04-64-nocm"
+  config.vm.box = "puppetlabs/centos-7.0-64-nocm"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -22,7 +22,7 @@ Vagrant.configure(2) do |config|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  #config.vm.network "forwarded_port", guest: 8000, host: 8000
+  config.vm.network "forwarded_port", guest: 8000, host: 8000
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -65,10 +65,14 @@ Vagrant.configure(2) do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-    sudo apt-get update
-    sudo apt-get install -y docker.io
-    sudo apt-get install install -y tcpdump gcc golang python-pip
+    sudo yum update -y
+    sudo yum install -y docker
+    sudo yum install -y tcpdump gcc golang
+    sudo easy_install pip
     sudo pip install docker-compose
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo groupadd docker
     sudo usermod -aG docker vagrant
     echo 'export GOPATH=~/gopath' > .bashrc
     echo 'export PS1="\\033[1;32m\\u@\\h:\\W$ \\033[00m"\n alias l=ls\n alias v=vi\n' >> .bashrc
