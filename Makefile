@@ -1,6 +1,6 @@
 CC=gcc
 
-all: senior-project-experiment c_fs_monitor/znotify
+all: senior-project-experiment c_fs_monitor/znotify cproc_monitor/proc
 
 senior-project-experiment: main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
 	go build
@@ -10,6 +10,9 @@ c_fs_monitor/test_fs_monitor: c_fs_monitor/test_fs_monitor.c
 
 c_fs_monitor/znotify: c_fs_monitor/znotify.c
 	${CC} -o c_fs_monitor/znotify c_fs_monitor/znotify.c
+
+cproc_monitor/proc: cproc_monitor/proc.c
+	${CC} -o cproc_monitor/proc cproc_monitor/proc.c -lm
 
 test: c_fs_monitor/test_fs_monitor
 	go test ./src/configurator
