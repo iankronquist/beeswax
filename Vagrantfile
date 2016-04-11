@@ -72,5 +72,6 @@ Vagrant.configure(2) do |config|
     sudo usermod -aG docker vagrant
     echo 'export GOPATH=~/gopath' > .bashrc
     echo 'export PS1="\\033[1;32m\\u@\\h:\\W$ \\033[00m"\n alias l=ls\n alias v=vi\n' >> .bashrc
+    chown -R vagrant /home/vagrant/gopath
   SHELL
 end
