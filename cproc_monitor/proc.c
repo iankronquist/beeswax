@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 
+#define SLURP_AMOUNT 1024
 
 /*
  * connect to netlink
@@ -112,11 +113,13 @@ bool process_is_in_docker_ns(int argc, const char **docker_ids,
     }
     // Create a buffer and slurp the whole file into it. The file probably
     // isn't too big.
-    size_t slurp_size = 1024;
-    char *proc_cgroup = malloc(slurp_size);
+    size_t slurp_size = SLURP_AMOUNT;
+    // Add 1 for the NULL byte.
+    char *proc_cgroup = malloc(slurp_size + 1);
+    size_t read = 0;
     while (true) {
         // Sluuuurp
-        fread(proc_cgroup, slurp_size, 1, proc_file);
+        read += fread(proc_cgroup, slurp_size, 1, proc_file);
         // If there was an error, clean up
         if (ferror(proc_file)) {
             perror("Failed to read /proc/PID/cgroup file");
@@ -126,23 +129,27 @@ bool process_is_in_docker_ns(int argc, const char **docker_ids,
         }
         // If we're not at the end of the file try again, otherwise break.
         if (!feof(proc_file)) {
-            slurp_size += 1024;
+            slurp_size += SLURP_AMOUNT;
             proc_cgroup = realloc(proc_cgroup, slurp_size);
         } else {
             break;
         }
     }
-
     fclose(proc_file);
 
-    // Iterate through the given ids and check to see if they're in the file.
-    for (i = 0; i < argc; ++i) {
-        fprintf(stderr, "cross");
-        // If we find one...
-        if (strstr(proc_cgroup, docker_ids[i]) != NULL) {
-            // Clean up and return true
-            free(proc_cgroup);
-            return true;
+    // Don't search if we didn't read anything.
+    if (read != 0) {
+        // Make sure the buffer is null terminated.
+        proc_cgroup[read*SLURP_AMOUNT] = '\0';
+
+        // Iterate through the given ids and check to see if they're in the file.
+        for (i = 0; i < argc; ++i) {
+            // If we find one...
+            if (strstr(proc_cgroup, docker_ids[i]) != NULL) {
+                // Clean up and return true
+                free(proc_cgroup);
+                return true;
+            }
         }
     }
     // If we didn't find any, clean up and return false
