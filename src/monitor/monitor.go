@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	_ "io/ioutil"
@@ -168,11 +169,28 @@ func startIPProcess(messages chan<- []byte, procId string, watcherName string,
 
 func setSymlink(procId string, destination string) error {
 	nameSpaceDir := "/var/run/netns/"
+	target := nameSpaceDir+destination
+	source := "/proc/"+procId+"/ns/net"
+
 	err := os.MkdirAll(nameSpaceDir, 0777)
 	if err != nil {
 		return err
 	}
-	err = os.Symlink("/proc/"+procId+"/ns/net", nameSpaceDir+destination)
+	_, err = os.Stat(target)
+	if err == nil {
+		err = os.Remove(target)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = os.Stat(source)
+	if os.IsNotExist(err) {
+		return errors.New("Could not set symlink: Target directory " +
+			target + " does not exist")
+	}
+
+	err = os.Symlink(source, target)
 	return err
 }
 
