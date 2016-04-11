@@ -244,15 +244,18 @@ func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
 }
 
 /* Start the process running on the honeypot host to monitor the Docker
- * container. The Docker container's filesysem is mounted on the host. Find
- * the location of this filesysem with the getDockerFSDirectory function and
+ * container. The Docker container's filesystem is mounted on the host. Find
+ * the location of this filesystem with the getDockerFSDirectory function and
  * store it in the struct. Then create and start the process and forward
  * the output of the process on to the messages channel.
  */
 func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	m.DockerDirs = m.getDockerFSDirectory(dockerComposeName)
-	m.fsWatcherProc = exec.Command(m.MonitorName, m.DockerDirs...)
-	fmt.Println(m.MonitorName, m.DockerDirs)
+	// FIXME Make arguments configurable
+	//arguments := append([]string{"-wte"}, m.DockerDirs...)
+	arguments := m.DockerDirs
+	fmt.Println(m.MonitorName, arguments)
+	m.fsWatcherProc = exec.Command(m.MonitorName, arguments...)
 	defer m.fsWatcherProc.Wait()
 
 	outpipe, err := m.fsWatcherProc.StdoutPipe()
@@ -279,6 +282,7 @@ func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 			fetch = f
 			line = append(line, partial_line...)
 			if err != nil {
+				fmt.Println("File monitor stopped")
 				panic(err)
 			}
 		}
