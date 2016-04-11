@@ -15,11 +15,11 @@ import (
 )
 
 type ipdata struct{
-	Epoch		[]byte `json:"Epoch"`
-	SourceIP	[]byte `json:"SourceIP"`
-	SourcePort	[]byte `json:"SourcePort"`
-	ReceiveIP	[]byte `json:"ReceiveIP"`
-	ReceivePort []byte `json:"ReceivePort"`
+	Epoch		string `json:"Epoch"`
+	SourceIP	string `json:"SourceIP"`
+	SourcePort	string `json:"SourcePort"`
+	ReceiveIP	string `json:"ReceiveIP"`
+	ReceivePort string `json:"ReceivePort"`
 	
 }
 /* The Monitor interface defines a series of methods which will be defined on
@@ -174,7 +174,7 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 func networkMonitorProcessor(sending chan<-[]byte,receiving <-chan[]byte)(error){
 	platform := []byte{}
 	carlson := []byte{}
-	pattern := "(\\d+\\.\\d+) IP (\\d{,3}\\.\\d{,3}\\.\\d{,3}\\.\\d{,3})\\.(\\d+) > (\\d{,3}\\.\\d{,3}\\.\\d{,3}\\.\\d{,3})\\.(\\d+)"
+	pattern := "(\\d+\\.\\d+) IP (\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\.(\\d+) > (\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\.(\\d+)"
 	compiled_pattern,err := regexp.Compile(pattern)
 	if err != nil{
 		return err
@@ -182,13 +182,19 @@ func networkMonitorProcessor(sending chan<-[]byte,receiving <-chan[]byte)(error)
 	for{
 		platform = <- receiving
 		matches := compiled_pattern.FindSubmatch(platform)
-		carl := ipdata{Epoch:matches[0],SourceIP:matches[1],
-						SourcePort:matches[2],ReceiveIP:matches[3],
-						ReceivePort:matches[4]}
+		fmt.Println(string(matches[2]), string(matches[1]))
+		carl := ipdata{
+			Epoch: string(matches[1]),
+			SourceIP: string(matches[2]),
+			SourcePort: string(matches[3]),
+			ReceiveIP: string(matches[4]),
+			ReceivePort: string(matches[5]),
+		}
 		carlson,err = json.Marshal(carl)
 		if err != nil{
 			return err
 		}
+		fmt.Println("Sending json: ", string(carlson))
 		sending<-carlson
 	}
 	
