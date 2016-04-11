@@ -276,8 +276,7 @@ func (m FSMonitor) getDockerFSDirectory(dockerComposeName string) []string {
 func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	m.DockerDirs = m.getDockerFSDirectory(dockerComposeName)
 	// FIXME Make arguments configurable
-	//arguments := append([]string{"-wte"}, m.DockerDirs...)
-	arguments := m.DockerDirs
+	arguments := append([]string{"-we"}, m.DockerDirs...)
 	fmt.Println(m.MonitorName, arguments)
 	m.fsWatcherProc = exec.Command(m.MonitorName, arguments...)
 	defer m.fsWatcherProc.Wait()
