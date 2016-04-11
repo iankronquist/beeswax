@@ -168,7 +168,7 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		if err != nil {
 			panic(err)
 		}
-		go startIPProcess(nmProcessorChan, scrubbedProcId, "tcpdump","-tt","-n","-i","any")
+		go startIPProcess(nmProcessorChan, scrubbedProcId, "tcpdump", "-tt", "-n", "-i", "any", "-l")
 	}
 }
 func networkMonitorProcessor(sending chan<-[]byte,receiving <-chan[]byte)(error){
