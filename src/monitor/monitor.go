@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strings"
 )
 
 type ipdata struct {
@@ -41,6 +40,11 @@ type FSMonitor struct {
 	MonitorName   string
 	DockerDirs    []string
 	fsWatcherProc *exec.Cmd
+}
+
+type ExecMonitor struct {
+	MonitorName  string
+	ContainerIds []string
 }
 
 type NetMonitor struct {
@@ -156,14 +160,12 @@ func getDockerContainerProcessIds(dockerComposeName string) []string {
 	output, err := runCommandAndSlurpOutput("docker", arguments)
 	for i, out := range output {
 		// FIXME: do we want to throw an error instead?
-		if out == "'0'" {
+		if out == "0" {
 			fmt.Println("Container isn't running: ", out)
 			output = append(output[:i], output[i+1:]...)
 			continue
 		}
-		// Replace all quotes
-		scrubbedProcId := strings.Replace(out, "'", "", -1)
-		output[i] = scrubbedProcId
+		output[i] = out
 	}
 
 	if err != nil {
@@ -171,6 +173,15 @@ func getDockerContainerProcessIds(dockerComposeName string) []string {
 	}
 	dockerContainerProcessIds = output
 	return output
+}
+
+func (e ExecMonitor) Start(messages chan<- []byte, dockerComposeName string) {
+	ids := getDockerContainerIds(dockerComposeName)
+	err := runCommandAndChannelOutput("cproc_monitor/proc", ids, messages)
+	if err != nil {
+		fmt.Println("Exec monitor failed")
+		panic(err)
+	}
 }
 
 func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {

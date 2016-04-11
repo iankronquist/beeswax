@@ -70,20 +70,15 @@ func StartMonitor(c Config) {
 	FSMessages := make(chan []byte)
 	FSMessagesOut := make(chan []byte)
 	networkMessages := make(chan []byte)
-	//execMessages := make(chan string)
+	execMessages := make(chan []byte)
 	netMonitor := monitor.NetMonitor{}
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
+	execMonitor := monitor.ExecMonitor{}
 	go netMonitor.Start(networkMessages, c.DockerComposeName)
 	go fsMonitor.Start(FSMessages, c.DockerComposeName)
+	go execMonitor.Start(execMessages, c.DockerComposeName)
 	go filter.StartFilterStream(FSMessagesOut, FSMessages)
-	outputs := [](chan []byte){FSMessagesOut, networkMessages}
-	go reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, outputs)
-	for {
-		message := <-FSMessagesOut
-		fmt.Println("Message received: ", string(message))
-	}
-	/*
-		go monitor.StartNetWorkMonitor(networkMessages)
-		go monitor.StartExecMonitor(execMessages)
-	*/
+	outputs := [](chan []byte){FSMessagesOut, networkMessages, execMessages}
+	reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, outputs)
+	for{}
 }
