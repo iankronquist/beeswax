@@ -145,6 +145,11 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		panic(err)
 	}
 	for _, procId := range output {
+		// FIXME: do we want to throw an error instead?
+		if procId == "'0'" {
+			fmt.Println("Container isn't running")
+			continue
+		}
 		// Replace all quotes
 		scrubbedProcId := strings.Replace(procId, "'", "", -1)
 		// TODO: Check for ids named 0, which means no proc id
