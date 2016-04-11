@@ -151,7 +151,7 @@ func getDockerContainerProcessIds(dockerComposeName string) []string {
 		return dockerContainerProcessIds
 	}
 	ids := getDockerContainerIds(dockerComposeName)
-	arguments := []string{"inspect", "-f", "'{{ .State.Pid }}'"}
+	arguments := []string{"inspect", "-f", "{{ .State.Pid }}"}
 	arguments = append(arguments, ids...)
 	output, err := runCommandAndSlurpOutput("docker", arguments)
 	for i, out := range output {
@@ -182,9 +182,10 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		if err != nil {
 			panic(err)
 		}
-		go startIPProcess(nmProcessorChan, procId, "tcpdump", "-tt", "-n", "-i", "any", "-l")
+		go startIPProcess(nmProcessorChan, procId, "tcpdump", "-tt", "-nn", "-i", "any", "-l")
 	}
 }
+
 func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) error {
 	platform := []byte{}
 	carlson := []byte{}
@@ -196,7 +197,10 @@ func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) err
 	for {
 		platform = <-receiving
 		matches := compiled_pattern.FindSubmatch(platform)
-		fmt.Println(string(matches[2]), string(matches[1]))
+		if len(matches) == 0 {
+			fmt.Println("Output did not match regex: ", string(platform))
+			continue
+		}
 		carl := ipdata{
 			Epoch:       string(matches[1]),
 			SourceIP:    string(matches[2]),
