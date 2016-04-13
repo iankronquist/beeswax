@@ -63,9 +63,9 @@ int main(int argc, char* argv[])
 	short options[5] = {0,0,0,1,0};
 	if(argc < 2)
 	{
-		fprintf(stderr,"\nNot Enough Arguments");
+		fprintf(stderr,"Not Enough Arguments\n");
 		help_menu(argv[0]);
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 	}
 	
 	while( (i = getopt(argc, argv, "hanewt")) != -1)
