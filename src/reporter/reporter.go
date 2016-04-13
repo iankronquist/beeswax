@@ -59,6 +59,8 @@ func Start(host string, port int, ident string, auth string, outputs []chan []by
 
 	// Publish something on "beeswax.events" every second
 	hp.Publish("beeswax.events", channel1)
+
+/*
 	// Subscribe to "beeswax.events" and print everything coming in on it
 	// prints something once every second - verify with others ::
 	channel2 := make(chan hpfeeds.Message)
@@ -68,6 +70,7 @@ func Start(host string, port int, ident string, auth string, outputs []chan []by
 			fmt.Println(foo.Name, string(foo.Payload))
 		}
 	}()
+	*/
 
 	// Wait for disconnect
 	<-hp.Disconnected
