@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
 				
 			}
 			if( nftw(file_name,walker,20, 
-				FTW_PHYS | FTW_MOUNT | FTW_DEPTH) == -1)
+				FTW_MOUNT | FTW_DEPTH) == -1)
 			{
 				exit(EXIT_FAILURE);
 			}
@@ -344,7 +344,6 @@ handle_events(int fd, int *wd,int add_child )
             {
                 type_ptr = file_cstring;
             }
-            
 	    /* Print event type */
             if (IN_CREATE & event->mask)
             {
@@ -594,12 +593,7 @@ static int watch_this(const char *pathname)
 static int walker(const char *pathname, const struct stat *sbuf,
 		int type,struct FTW *ftwb)
 {
-	if(sbuf->st_mode & S_IFLNK)
-	{
-		fprintf(stderr,"\nSkipping Symlink: %s",pathname);
-		return 0;
-	}
-	else if(sbuf->st_mode & S_IFDIR)
+    if(sbuf->st_mode & S_IFDIR)
 	{
         	return watch_this(pathname);
 	}
