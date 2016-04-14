@@ -71,6 +71,7 @@ func StartMonitor(c Config) {
 	FSMessagesOut := make(chan []byte)
 	networkMessages := make(chan []byte)
 	execMessages := make(chan []byte)
+	reporterMessages := make(chan []byte)
 	netMonitor := monitor.NetMonitor{}
 	fsMonitor := monitor.FSMonitor{MonitorName: c.MonitorName}
 	execMonitor := monitor.ExecMonitor{}
@@ -78,7 +79,20 @@ func StartMonitor(c Config) {
 	go fsMonitor.Start(FSMessages, c.DockerComposeName)
 	go execMonitor.Start(execMessages, c.DockerComposeName)
 	go filter.StartFilterStream(FSMessagesOut, FSMessages)
-	outputs := [](chan []byte){FSMessagesOut, networkMessages, execMessages}
-	reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, outputs)
+	for {
+		select {
+			case message := <-execMessages:
+				fmt.Println("exec: ", string(message))
+				go func () { reporterMessages <- message }()
+			case message := <-networkMessages:
+				//fmt.Println("net: ", string(message))
+				go func () { reporterMessages <- message }()
+			case message := <-FSMessagesOut:
+				//fmt.Println("filtered fs: ", string(message))
+				go func () { reporterMessages <- message }()
+		}
+	}
+
+	reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, reporterMessages)
 	for{}
 }

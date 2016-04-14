@@ -39,18 +39,20 @@ func merge(cs ...chan []byte) (chan []byte, chan []byte) {
 	return out, debug
 }
 
-func Start(host string, port int, ident string, auth string, outputs []chan []byte) {
+func Start(host string, port int, ident string, auth string, outputs chan []byte) {
 	hp := hpfeeds.NewHpfeeds(host, port, ident, auth)
 	hp.Log = true
 	// Channel1 is where we put the filtered JSON data
-	channel1, debug := merge(outputs...)
+	//channel1, debug := merge(outputs...)
 
+/*
 	go func() {
 		for {
 			message := <- debug
 			fmt.Println("message: ", string(message))
 		}
 	}()
+	*/
 
 	fmt.Println("Waiting to connect to MHN server...")
 	hp.Connect()
@@ -58,7 +60,7 @@ func Start(host string, port int, ident string, auth string, outputs []chan []by
 
 
 	// Publish something on "beeswax.events" every second
-	hp.Publish("beeswax.events", channel1)
+	hp.Publish("beeswax.events", outputs)
 
 /*
 	// Subscribe to "beeswax.events" and print everything coming in on it
