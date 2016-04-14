@@ -11,6 +11,18 @@ type FilterConfig struct {
 	Ignore []string `json:"ignore"`
 }
 
+// Correct for a bug in znotify.
+func filterLowBytes(contaminated []byte) []byte {
+	// Remove all non-printing ascii characters
+	for i, item := range contaminated {
+		if item < byte(' ') {
+			contaminated = append(contaminated[:i], contaminated[i+1:]...)
+		}
+	}
+	// It's been cleaned
+	return contaminated
+}
+
 func GetFilterConfig(fileName string) (FilterConfig, error) {
 	/* Takes a json file name as a string. Reads the file, unmarshals json.
 	Returns the unmarshalled FilterConfig object
@@ -68,6 +80,7 @@ func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
 func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
 		message := <-receiving
+		message = filterLowBytes(message)
 		zid := ZachsInotifyData{}
 		err := json.Unmarshal(message, &zid)
 		if err != nil {
