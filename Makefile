@@ -17,7 +17,7 @@ cproc_monitor/proc: cproc_monitor/proc.c
 deps:
 	go get
 
-test: c_fs_monitor/test_fs_monitor
+test: deps c_fs_monitor/test_fs_monitor
 	go test ./src/configurator
 	go test ./src/monitor
 	go test ./src/reporter
@@ -27,4 +27,4 @@ clean:
 	rm -f senior-project-experiment c_fs_monitor/znotify \
 		c_fs_monitor/test_fs_monitor
 
-.PHONY: deps
+.PHONY: deps clean all test
