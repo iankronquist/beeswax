@@ -326,7 +326,7 @@ handle_events(int fd, int *wd,int add_child )
         {
             event = (const struct inotify_event *) ptr;
             
-            for (i = 0; i < steve.w_count[steve.current_f]; ++i)
+            for (i = 0; i < steve.w_last[steve.current_f]; ++i)
             {
                 if (wd[i] == event->wd)
                 {
@@ -348,31 +348,30 @@ handle_events(int fd, int *wd,int add_child )
             if (IN_CREATE & event->mask)
             {
                 mask_ptr = in_create_cstring;
-		if(add_child && (strcmp(type_ptr,folder_cstring)==0))
-		{	
-			strcpy(pathname_buffer,  steve.path[steve.current_f]
-							[steve.current_w]);
-			length = strlen(pathname_buffer);
-fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
-			if(pathname_buffer[length - 1] != '/')
-			{
-				pathname_buffer[length] = '/';
-				pathname_buffer[length + 1] = '\0';
-			}
-			strcat(pathname_buffer,event->name);
-			//watch_this relies on current_w
-length = strlen(pathname_buffer);
-fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
-			steve.current_w = steve.w_last[steve.current_f] + 1;
-			if(watch_this(pathname_buffer) == -1)
-			{
-				fprintf(stderr,"\nFailed to add: %s",
-							pathname_buffer);
-			}
-			//watch_this will increment current_w
-			steve.current_w = i;
-		exit(EXIT_SUCCESS);
-		}
+                if(add_child && (strcmp(type_ptr,folder_cstring)==0))
+                {	
+                    strcpy(pathname_buffer,  steve.path[steve.current_f]
+                                    [steve.current_w]);
+                    length = strlen(pathname_buffer);
+        fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
+                    if(pathname_buffer[length - 1] != '/')
+                    {
+                        pathname_buffer[length] = '/';
+                        pathname_buffer[length + 1] = '\0';
+                    }
+                    strcat(pathname_buffer,event->name);
+                    //watch_this relies on current_w
+        length = strlen(pathname_buffer);
+        fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
+                    steve.current_w = steve.w_last[steve.current_f] + 1;
+                    if(watch_this(pathname_buffer) == -1)
+                    {
+                        fprintf(stderr,"\nFailed to add: %s",
+                                    pathname_buffer);
+                    }
+                    //watch_this will increment current_w
+                    steve.current_w = i;
+                }
             }
             else if (IN_ACCESS & event->mask)
             {
@@ -413,15 +412,20 @@ fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
             else if (IN_DELETE_SELF & event->mask)
             {
                 mask_ptr = in_delete_self_cstring;
-	    	print_json(buffer,mask_ptr,
-			steve.path[steve.current_f][steve.current_w],
-			"\0",type_ptr);
-		break;
-	    }
-            
-	    print_json(buffer,mask_ptr,
-			steve.path[steve.current_f][steve.current_w],
-			event->name,type_ptr);
+            }
+
+            if(event->len == 0)
+            {
+                print_json(buffer,mask_ptr,
+                           steve.path[steve.current_f][steve.current_w],
+                           "\0",type_ptr);
+            }
+            else
+            {
+                print_json(buffer,mask_ptr,
+                    steve.path[steve.current_f][steve.current_w],
+                    event->name,type_ptr);
+            }
         }
     }
     fflush(stdout);
@@ -478,7 +482,7 @@ static void print_json(const char * date, const char * event,
     char *safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
     if (strcmp(name,"\0") != 0)
     {
-	json_safe(name,safe_name,strlen(name));
+        json_safe(name,safe_name,strlen(name));
     }
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
     free(safe_name);
@@ -556,8 +560,8 @@ fprintf(stderr,"Adding %s of %d\n",pathname,strlen(pathname));
         if((temp != NULL) && temp_paths != NULL)
         {
             steve.wd[steve.current_f] = temp;
-	    steve.path[steve.current_f] = temp_paths;
-            steve.w_count[steve.current_f] += 10;
+            steve.path[steve.current_f] = temp_paths;
+            steve.w_count[steve.current_f] += INCREMENT;
         }
         else
         {
@@ -568,16 +572,17 @@ fprintf(stderr,"Adding %s of %d\n",pathname,strlen(pathname));
     fd = inotify_add_watch(steve.fd[steve.current_f], pathname, mask);
     if(fd == -1)
     {
-	if((errno == ENOSPC) && (steve.w_count[steve.current_f] >= MAX_WATCHES))
-	{
-		fprintf(stderr,"Error: Try Putting Subdirectories"
-				" in Command Line\n");
-	}
-	else
-	{	
-		fprintf(stderr,"Error Occured Adding to Watch List: %s %s\n",
-			pathname,strerror(errno));
-	}
+        if((errno == ENOSPC) &&
+           (steve.w_count[steve.current_f] >= MAX_WATCHES))
+        {
+            fprintf(stderr,"Error: Try Putting Subdirectories"
+                    " in Command Line\n");
+        }
+        else
+        {	
+            fprintf(stderr,"Error Occured Adding to Watch List: %s %s\n",
+                pathname,strerror(errno));
+        }
         return -1;
     }
     steve.wd[steve.current_f][steve.current_w] = fd;
@@ -622,7 +627,8 @@ static int walker(const char *pathname, const struct stat *sbuf,
 *************************************************************************/
 static void help_menu(char * file)
 {
-	fprintf(stderr,"General: %s [w or t] [a] [n or e] [directories to be watched]",file);
+	fprintf(stderr,"General: %s [w or t] [a] [n or e]"
+                    "[directories to be watched]",file);
 	fprintf(stderr,"\n\t-w Watch Only, do NOT Traverse");
 	fprintf(stderr,"\n\t-t Traverse and Add Child Directories to Watch List");
 	fprintf(stderr,"\n\t-h Display this Help Menu");
