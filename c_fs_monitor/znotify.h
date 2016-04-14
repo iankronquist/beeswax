@@ -13,7 +13,7 @@
  */ 
 #define JSON_OBJECT "{\"DATE\":\"%s\",\"EVENT\":\"%s\",\"PATH\":\"%s/%s\",\"TYPE\":\"%s\"}\n"
 #define PATH_LIMIT (PATH_MAX * 2 + 1)
-#define TIME_OUTPUT "%c"
+#define TIME_OUTPUT "%s"
 #define MAX_INOTIFY_INSTANCES 128 // in proc/sys/fs/inotify/max_user_*
 #define MAX_WATCHES 8192
 #define DEFAULT_WATCH_NUMBER 2 
