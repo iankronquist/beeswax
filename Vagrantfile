@@ -67,7 +67,7 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: <<-SHELL
     sudo yum update -y
     sudo yum install -y docker
-    sudo yum install -y tcpdump gcc golang
+    sudo yum install -y tcpdump gcc golang git
     sudo easy_install pip
     sudo pip install docker-compose
     sudo systemctl enable docker
