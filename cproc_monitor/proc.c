@@ -16,6 +16,43 @@
 
 #define SLURP_AMOUNT 1024
 
+void print_json_fork(int parent_pid, int parent_tgid, int child_pid,
+        int child_tgid) {
+    fprintf(stdout, "{\"type\": \"fork\" \"parent_pid\": %d, "
+                    "\"parent_tgid\": %d, \"child_pid\": %d, "
+                    "\"child_tgid\": %d}\n",
+       parent_pid, parent_tgid, child_pid, child_tgid);
+    fflush(stdout);
+}
+
+void print_json_exec(int proc_pid, int proc_tgid) {
+    fprintf(stdout, "{\"type\": \"exec\" \"pid\": %d, "
+                    "\"tgid\": %d}\n",
+        proc_pid, proc_tgid);
+    fflush(stdout);
+}
+
+void print_json_uid_change(int pid, int tgid, int ruid, int euid) {
+    fprintf(stdout, "{\"type\": \"uid_change\" \"pid\": %d, \"tgid\": %d, "
+                    "\"ruid\": %d, \"euid\": %d}\n",
+           pid, tgid, ruid, euid);
+    fflush(stdout);
+}
+
+void print_json_gid_change(int pid, int tgid, int ruid, int euid) {
+    fprintf(stdout, "{\"type\": \"gid_change\" \"pid\": %d, \"tgid\": %d, "
+                    "\"ruid\": %d, \"euid\": %d}\n",
+           pid, tgid, ruid, euid);
+    fflush(stdout);
+}
+
+void print_json_exit(int proc_pid, int proc_tgid, int exit_code) {
+    fprintf(stdout, "{\"type\": \"exit\" \"pid\": %d, \"tgid\": %d, "
+                    "\"exit_code\": %d}\n",
+            proc_pid, proc_tgid, exit_code);
+    fflush(stdout);
+}
+
 /*
  * connect to netlink
  * returns netlink socket, or -1 on error
@@ -105,10 +142,12 @@ bool process_is_in_docker_ns(int argc, const char **docker_ids,
     // Open the file and get its size
     FILE *proc_file = fopen(buff, "r");
     if (proc_file == NULL) {
+#ifdef DEBUG
         fprintf(stderr,
                 "The entry under '%s' for the process %d isn't available\n",
                 buff, child_pid);
         perror("Error opening file");
+#endif
         return false;
     }
     // Create a buffer and slurp the whole file into it. The file probably
@@ -185,63 +224,58 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
 
         switch (nlcn_msg.proc_ev.what) {
             case PROC_EVENT_NONE:
-                printf("set mcast listen ok\n");
+                fprintf(stderr, "set mcast listen ok\n");
                 break;
             case PROC_EVENT_FORK:
-                if (!process_is_in_docker_ns(argc, docker_ids,
+                if (process_is_in_docker_ns(argc, docker_ids,
                             nlcn_msg.proc_ev.event_data.fork.parent_pid)) {
-                    continue;
-                }
-                printf("fork: parent tid=%d pid=%d -> child tid=%d pid=%d\n",
+                    print_json_fork(
                         nlcn_msg.proc_ev.event_data.fork.parent_pid,
                         nlcn_msg.proc_ev.event_data.fork.parent_tgid,
                         nlcn_msg.proc_ev.event_data.fork.child_pid,
                         nlcn_msg.proc_ev.event_data.fork.child_tgid);
+                }
                 break;
             case PROC_EVENT_EXEC:
-                if (!process_is_in_docker_ns(argc, docker_ids,
+                if (process_is_in_docker_ns(argc, docker_ids,
                             nlcn_msg.proc_ev.event_data.exec.process_pid)) {
-                    continue;
-                }
-
-                printf("exec: tid=%d pid=%d\n",
+                    print_json_exec(
                         nlcn_msg.proc_ev.event_data.exec.process_pid,
                         nlcn_msg.proc_ev.event_data.exec.process_tgid);
+                }
                 break;
             case PROC_EVENT_UID:
-                if (!process_is_in_docker_ns(argc, docker_ids,
+                if (process_is_in_docker_ns(argc, docker_ids,
                             nlcn_msg.proc_ev.event_data.id.process_pid)) {
-                    continue;
-                }
-                printf("uid change: tid=%d pid=%d from %d to %d\n",
+                    print_json_uid_change(
                         nlcn_msg.proc_ev.event_data.id.process_pid,
                         nlcn_msg.proc_ev.event_data.id.process_tgid,
                         nlcn_msg.proc_ev.event_data.id.r.ruid,
                         nlcn_msg.proc_ev.event_data.id.e.euid);
+                }
                 break;
             case PROC_EVENT_GID:
-                if (!process_is_in_docker_ns(argc, docker_ids,
+                if (process_is_in_docker_ns(argc, docker_ids,
                             nlcn_msg.proc_ev.event_data.id.process_pid)) {
-                    continue;
-                }
-                printf("gid change: tid=%d pid=%d from %d to %d\n",
+                    print_json_gid_change(
                         nlcn_msg.proc_ev.event_data.id.process_pid,
                         nlcn_msg.proc_ev.event_data.id.process_tgid,
-                        nlcn_msg.proc_ev.event_data.id.r.rgid,
-                        nlcn_msg.proc_ev.event_data.id.e.egid);
-                break;
-            case PROC_EVENT_EXIT:
-                if (!process_is_in_docker_ns(argc, docker_ids,
-                            nlcn_msg.proc_ev.event_data.exit.process_pid)) {
+                        nlcn_msg.proc_ev.event_data.id.r.ruid,
+                        nlcn_msg.proc_ev.event_data.id.e.euid);
                     continue;
                 }
-                printf("exit: tid=%d pid=%d exit_code=%d\n",
+                break;
+            case PROC_EVENT_EXIT:
+                if (process_is_in_docker_ns(argc, docker_ids,
+                            nlcn_msg.proc_ev.event_data.exit.process_pid)) {
+                    print_json_exit(
                         nlcn_msg.proc_ev.event_data.exit.process_pid,
                         nlcn_msg.proc_ev.event_data.exit.process_tgid,
                         nlcn_msg.proc_ev.event_data.exit.exit_code);
+                }
                 break;
             default:
-                printf("unhandled proc event\n");
+                fprintf(stderr, "unhandled proc event\n");
                 break;
         }
     }
