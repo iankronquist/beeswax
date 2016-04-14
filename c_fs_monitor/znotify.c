@@ -433,7 +433,7 @@ static void json_safe(const char * source, char * destination, int size)
     int k = 0;
     for( ; k< size && l < PATH_LIMIT; k++)
     {
-        if(source[k] == '"' || source[k] == '\n' || source[k] == '\'' || source[k] == '\t')
+        if(source[k] == '"' || source[k] == '\n' || source[k] == '\'' || source[k] == '\t' || source[k] == '\\')
         {
             destination[l++] = '\\';
             destination[l++] = source[k];
@@ -470,7 +470,11 @@ static void print_json(const char * date, const char * event,const char *directo
     char *safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
     if(strcmp(name,"") != 0)
     {
+	fprintf(stderr,"\n\tTrying to Make JSON SAFE size: %d for %s\n"
+			,strlen(name),name);
 	json_safe(name,safe_name,strlen(name));
+	fprintf(stderr,"\tMade Make JSON SAFE size: %d for %s\n"
+			,strlen(safe_name),safe_name);
     }
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
     free(safe_name);
