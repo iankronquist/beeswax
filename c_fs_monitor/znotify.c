@@ -353,14 +353,16 @@ handle_events(int fd, int *wd,int add_child )
 			strcpy(pathname_buffer,  steve.path[steve.current_f]
 							[steve.current_w]);
 			length = strlen(pathname_buffer);
+fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
 			if(pathname_buffer[length - 1] != '/')
 			{
 				pathname_buffer[length] = '/';
 				pathname_buffer[length + 1] = '\0';
 			}
 			strcat(pathname_buffer,event->name);
-		//	fprintf(stderr,"\nPathname: %s\n",pathname_buffer);
 			//watch_this relies on current_w
+length = strlen(pathname_buffer);
+fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
 			steve.current_w = steve.w_last[steve.current_f] + 1;
 			if(watch_this(pathname_buffer) == -1)
 			{
@@ -369,6 +371,7 @@ handle_events(int fd, int *wd,int add_child )
 			}
 			//watch_this will increment current_w
 			steve.current_w = i;
+		exit(EXIT_SUCCESS);
 		}
             }
             else if (IN_ACCESS & event->mask)
@@ -410,7 +413,11 @@ handle_events(int fd, int *wd,int add_child )
             else if (IN_DELETE_SELF & event->mask)
             {
                 mask_ptr = in_delete_self_cstring;
-            }
+	    	print_json(buffer,mask_ptr,
+			steve.path[steve.current_f][steve.current_w],
+			"\0",type_ptr);
+		break;
+	    }
             
 	    print_json(buffer,mask_ptr,
 			steve.path[steve.current_f][steve.current_w],
@@ -431,6 +438,7 @@ static void json_safe(const char * source, char * destination, int size)
 {
     int l = 0;
     int k = 0;
+fprintf(stderr,"JSONING %s of %d\n",source,strlen(source));
     for( ; k< size && l < PATH_LIMIT; k++)
     {
         if(source[k] == '"' || source[k] == '\n' || source[k] == '\'' || source[k] == '\t' || source[k] == '\\')
@@ -464,17 +472,13 @@ static void json_safe(const char * source, char * destination, int size)
  * Pre-Conditions: Assumes directory is properly escaped for JSON
  * Post-Conditions:Prints string to standard output
  ****************************************************************************/
-static void print_json(const char * date, const char * event,const char *directory,
-                const char *name, const char *type)
+static void print_json(const char * date, const char * event,
+	const char *directory, const char *name, const char *type)
 {
     char *safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
-    if(strcmp(name,"") != 0)
+    if (strcmp(name,"\0") != 0)
     {
-	fprintf(stderr,"\n\tTrying to Make JSON SAFE size: %d for %s\n"
-			,strlen(name),name);
 	json_safe(name,safe_name,strlen(name));
-	fprintf(stderr,"\tMade Make JSON SAFE size: %d for %s\n"
-			,strlen(safe_name),safe_name);
     }
     fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
     free(safe_name);
@@ -542,7 +546,7 @@ static int watch_this(const char *pathname)
     int *temp = NULL;
     char **temp_paths = NULL;
     int fd;
-
+fprintf(stderr,"Adding %s of %d\n",pathname,strlen(pathname));
     if(steve.w_count[steve.current_f] <= steve.current_w)
     {
         temp = realloc(steve.wd[steve.current_f],
@@ -566,11 +570,12 @@ static int watch_this(const char *pathname)
     {
 	if((errno == ENOSPC) && (steve.w_count[steve.current_f] >= MAX_WATCHES))
 	{
-		fprintf(stderr,"\nError: Try Putting Subdirectories in Command Line\n");
+		fprintf(stderr,"Error: Try Putting Subdirectories"
+				" in Command Line\n");
 	}
 	else
 	{	
-		fprintf(stderr,"\nError Occured Adding to Watch List: %s %s\n",
+		fprintf(stderr,"Error Occured Adding to Watch List: %s %s\n",
 			pathname,strerror(errno));
 	}
         return -1;
@@ -582,6 +587,7 @@ static int watch_this(const char *pathname)
     json_safe(pathname,
 		steve.path[steve.current_f][steve.current_w],
 		strlen(pathname));
+fprintf(stderr,"Received %s of %d\n",steve.path[steve.current_f][steve.current_w],strlen(steve.path[steve.current_f][steve.current_w]));
     steve.w_last[steve.current_f] += 1;
     steve.current_w++;
     return 0;
@@ -603,7 +609,7 @@ static int walker(const char *pathname, const struct stat *sbuf,
 	}
 	else if(sbuf->st_mode & FTW_DNR)
 	{
-		fprintf(stderr,"\nCan't Read: %s",pathname);
+		fprintf(stderr,"Can't Read: %s\n",pathname);
         	return 0;
 	}
 }
