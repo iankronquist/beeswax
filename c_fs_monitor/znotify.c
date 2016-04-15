@@ -369,7 +369,6 @@ handle_events(int fd, int *wd,int add_child )
 					}
 					//watch_this will increment current_w
 					steve.current_w = i;
-					status(steve);
 				}
 			}
 			else if (IN_ACCESS & event->mask)
