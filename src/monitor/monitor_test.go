@@ -16,7 +16,8 @@ func TestFSMonitorStart(t *testing.T) {
 }
 */
 
-func TestrunCommandAndSlurpOutput( t *testing.T) {
+func TestRunCommandAndSlurpOutput( t *testing.T) {
+	t.Fail()
 	t.Error("BOOGERS")
 	command := "echo"
 	arguments := []string{}
