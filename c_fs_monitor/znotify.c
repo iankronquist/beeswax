@@ -191,7 +191,6 @@ int main(int argc, char* argv[])
 	{
 		exit(EXIT_FAILURE);
 	}
-    status(steve);
 //Poll Section 
 	for(i = 0; i < steve.arguments; i++)
 	{
@@ -352,7 +351,6 @@ handle_events(int fd, int *wd,int add_child )
                 mask_ptr = in_create_cstring;
                 if(add_child && (strcmp(type_ptr,folder_cstring)==0))
                 {
-                    status(steve);
                     strcpy(pathname_buffer,  steve.path[steve.current_f]
                                     [steve.current_w]);
                     length = strlen(pathname_buffer);
@@ -365,12 +363,13 @@ fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
                     strcat(pathname_buffer,event->name);
                     //watch_this relies on current_w
 fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,strlen(pathname_buffer));
-                    steve.current_w = steve.w_last[steve.current_f] + 1;
+                    steve.current_w = steve.w_last[steve.current_f];
                     if(watch_this(pathname_buffer) == -1)
                     {
-                        fprintf(stderr,"\nFailed to add: %s",
+                        fprintf(stderr,"Failed to add: %s\n",
                                     pathname_buffer);
                     }
+fprintf(stderr,"Back in Event Handler Watch_this, Received %s of %d\n",steve.path[steve.current_f][steve.current_w -1],strlen(steve.path[steve.current_f][steve.current_w - 1]));
                     //watch_this will increment current_w
                     steve.current_w = i;
                     status(steve);
@@ -421,7 +420,7 @@ fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,strlen(pathname_buffer))
             {
                 print_json(buffer,mask_ptr,
                            steve.path[steve.current_f][steve.current_w],
-                           "\0",type_ptr);
+                           "",type_ptr);
             }
             else
             {
@@ -483,7 +482,7 @@ static void print_json(const char * date, const char * event,
 	const char *directory, const char *name, const char *type)
 {
     char *safe_name = NULL;
-    if (strcmp(name,"\0") != 0)
+    if (name[0] != 0)
     {
         safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
         json_safe(name,safe_name,strlen(name));
@@ -560,7 +559,7 @@ static int watch_this(const char *pathname)
     char **temp_paths = NULL;
     int fd;
 fprintf(stderr,"Begin of watch_this, adding %s of %d\n",pathname,strlen(pathname));
-    if(steve.w_count[steve.current_f] <= steve.current_w)
+    if(steve.w_count[steve.current_f] <= steve.w_last[steve.current_f])
     {
         temp = realloc(steve.wd[steve.current_f],
                 ((steve.w_count[steve.current_f] + INCREMENT)*sizeof(int)));
@@ -604,6 +603,7 @@ fprintf(stderr,"Begin of watch_this, adding %s of %d\n",pathname,strlen(pathname
 fprintf(stderr,"End of Watch_this, Received %s of %d\n",steve.path[steve.current_f][steve.current_w],strlen(steve.path[steve.current_f][steve.current_w]));
     steve.w_last[steve.current_f] += 1;
     steve.current_w++;
+    status(steve);
     return 0;
 }
 
@@ -661,7 +661,7 @@ static void status(struct znotify z)
         fprintf(stderr,"\tWatch Descriptor Count: %d out of %d\n",z.w_last[i],z.w_count[i]);
         for(j=0; j<z.w_last[i];j++)
         {
-            fprintf(stderr,"\tPathname %s\n",z.path[i][j]);
+            fprintf(stderr,"\tPathname[%d][%d] %s\n",i,j,z.path[i][j]);
         }
     }
 }
