@@ -31,5 +31,5 @@ struct znotify
 	char ***path;
 };
 
-
+static void status(struct znotify z);
 #endif

@@ -162,7 +162,9 @@ int main(int argc, char* argv[])
 			steve.wd[i][0] = 
 				inotify_add_watch(steve.fd[i], file_name, mask);
 			json_safe(file_name,steve.path[i][0],strlen(file_name));
+            steve.w_last[i] = 1;
 			steve.w_count[i] = 1;
+                        status(steve);
 		}
 	}
 	else if(options[OPT_T])
@@ -189,7 +191,7 @@ int main(int argc, char* argv[])
 	{
 		exit(EXIT_FAILURE);
 	}
-	
+    status(steve);
 //Poll Section 
 	for(i = 0; i < steve.arguments; i++)
 	{
@@ -349,11 +351,12 @@ handle_events(int fd, int *wd,int add_child )
             {
                 mask_ptr = in_create_cstring;
                 if(add_child && (strcmp(type_ptr,folder_cstring)==0))
-                {	
+                {
+                    status(steve);
                     strcpy(pathname_buffer,  steve.path[steve.current_f]
                                     [steve.current_w]);
                     length = strlen(pathname_buffer);
-        fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
+fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
                     if(pathname_buffer[length - 1] != '/')
                     {
                         pathname_buffer[length] = '/';
@@ -361,8 +364,7 @@ handle_events(int fd, int *wd,int add_child )
                     }
                     strcat(pathname_buffer,event->name);
                     //watch_this relies on current_w
-        length = strlen(pathname_buffer);
-        fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,length);
+fprintf(stderr,"\nPathname: %s of %d\n",pathname_buffer,strlen(pathname_buffer));
                     steve.current_w = steve.w_last[steve.current_f] + 1;
                     if(watch_this(pathname_buffer) == -1)
                     {
@@ -371,6 +373,7 @@ handle_events(int fd, int *wd,int add_child )
                     }
                     //watch_this will increment current_w
                     steve.current_w = i;
+                    status(steve);
                 }
             }
             else if (IN_ACCESS & event->mask)
@@ -479,13 +482,19 @@ fprintf(stderr,"JSONING %s of %d\n",source,strlen(source));
 static void print_json(const char * date, const char * event,
 	const char *directory, const char *name, const char *type)
 {
-    char *safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
+    char *safe_name = NULL;
     if (strcmp(name,"\0") != 0)
     {
+        safe_name = calloc((NAME_MAX * 2 + 1),sizeof(char));
         json_safe(name,safe_name,strlen(name));
+        fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
+        free(safe_name);
     }
-    fprintf(stdout,JSON_OBJECT,date,event,directory,safe_name,type);
-    free(safe_name);
+    else
+    {
+        //name will be "\0"
+        fprintf(stdout,JSON_OBJECT,date,event,directory,name,type);
+    }
 }
               
 /*************************************************************************
@@ -550,7 +559,7 @@ static int watch_this(const char *pathname)
     int *temp = NULL;
     char **temp_paths = NULL;
     int fd;
-fprintf(stderr,"Adding %s of %d\n",pathname,strlen(pathname));
+fprintf(stderr,"Begin of watch_this, adding %s of %d\n",pathname,strlen(pathname));
     if(steve.w_count[steve.current_f] <= steve.current_w)
     {
         temp = realloc(steve.wd[steve.current_f],
@@ -592,7 +601,7 @@ fprintf(stderr,"Adding %s of %d\n",pathname,strlen(pathname));
     json_safe(pathname,
 		steve.path[steve.current_f][steve.current_w],
 		strlen(pathname));
-fprintf(stderr,"Received %s of %d\n",steve.path[steve.current_f][steve.current_w],strlen(steve.path[steve.current_f][steve.current_w]));
+fprintf(stderr,"End of Watch_this, Received %s of %d\n",steve.path[steve.current_f][steve.current_w],strlen(steve.path[steve.current_f][steve.current_w]));
     steve.w_last[steve.current_f] += 1;
     steve.current_w++;
     return 0;
@@ -636,4 +645,23 @@ static void help_menu(char * file)
 	fprintf(stderr,"\n\t-n Watch for Only Creation Events [DEFAULT]");
 	fprintf(stderr,"\n\t-e Watch for ALL Events\n");
 	return;
+}
+
+
+static void status(struct znotify z)
+{
+    int i;
+    int j;
+    
+    fprintf(stderr,"\tNumber of Arguments: %d\n",z.arguments);
+    fprintf(stderr,"\tcurrent_f: %d current_w: %d\n",z.current_f,z.current_w);
+    for(i=0; i < z.arguments; i++)
+    {
+        fprintf(stderr,"\tFile Descriptor: %d\n",z.fd[i]);
+        fprintf(stderr,"\tWatch Descriptor Count: %d out of %d\n",z.w_last[i],z.w_count[i]);
+        for(j=0; j<z.w_last[i];j++)
+        {
+            fprintf(stderr,"\tPathname %s\n",z.path[i][j]);
+        }
+    }
 }
