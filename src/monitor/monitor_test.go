@@ -1,8 +1,9 @@
 package monitor
 
 import "testing"
-import "fmt"
+import "reflect"
 
+/*
 func TestFSMonitorStart(t *testing.T) {
 	fsMonitor := FSMonitor{MonitorName: "cstuff/test_fs_monitor"}
 	channel := make(chan string)
@@ -11,5 +12,20 @@ func TestFSMonitorStart(t *testing.T) {
 		b := <-channel
 		fmt.Println(b)
 		t.Fail()
+	}
+}
+*/
+
+func TestrunCommandAndSlurpOutput( t *testing.T) {
+	t.Error("BOOGERS")
+	command := "echo"
+	arguments := []string{}
+	expected := []string{}
+	actual,err := runCommandAndSlurpOutput(command,arguments)
+	if err != nil {
+		t.Error("Echo Errored")
+	}
+	if !reflect.DeepEqual(actual, expected) {
+		t.Error("Expected Nothing but Got:",actual)	
 	}
 }
