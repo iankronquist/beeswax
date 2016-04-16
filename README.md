@@ -1,6 +1,7 @@
 # None of Your Beeswax! [![build status](https://travis-ci.org/iankronquist/senior-project-experiment.svg)](https://travis-ci.org/iankronquist/senior-project-experiment)
 ## *A Next-Generation Honeypot*
 
+
 There are a wide variety of open source honeypot solutions available on the
 market, but most of these emulate the behavior of vulnerable software instead
 of directly observing the actions of the actual vulnerable software. The flaw
@@ -49,7 +50,7 @@ Consequently, we have divided the system into four components we term the
 Configurator, Monitor, Filter, and Reporter. Messages will be passed between
 these components.
 
-![Architecture Diagram](./architecturediagram.svg)
+![Architecture Diagram](./architecturediagram.png)
 
 
 ## Installation
