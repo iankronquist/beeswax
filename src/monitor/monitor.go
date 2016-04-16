@@ -134,6 +134,7 @@ func runCommandAndChannelOutput(commandname string, args []string, output chan<-
 			output <- line
 		}
 	}
+	close(output)
 	return nil
 }
 
