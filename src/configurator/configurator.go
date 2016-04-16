@@ -85,10 +85,10 @@ func StartMonitor(c Config) {
 				fmt.Println("exec: ", string(message))
 				go func () { reporterMessages <- message }()
 			case message := <-networkMessages:
-				//fmt.Println("net: ", string(message))
+				fmt.Println("net: ", string(message))
 				go func () { reporterMessages <- message }()
 			case message := <-FSMessagesOut:
-				//fmt.Println("filtered fs: ", string(message))
+				fmt.Println("filtered fs: ", string(message))
 				go func () { reporterMessages <- message }()
 		}
 	}
