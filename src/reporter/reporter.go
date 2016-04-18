@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/fw42/go-hpfeeds"
 	"sync"
-	_"time"
+	_ "time"
 )
 
 // Inspired by http://blog.golang.org/pipelines
@@ -45,33 +45,32 @@ func Start(host string, port int, ident string, auth string, outputs chan []byte
 	// Channel1 is where we put the filtered JSON data
 	//channel1, debug := merge(outputs...)
 
-/*
-	go func() {
-		for {
-			message := <- debug
-			fmt.Println("message: ", string(message))
-		}
-	}()
+	/*
+		go func() {
+			for {
+				message := <- debug
+				fmt.Println("message: ", string(message))
+			}
+		}()
 	*/
 
 	fmt.Println("Waiting to connect to MHN server...")
 	hp.Connect()
 	fmt.Println("Successfully connected to MHN server!")
 
-
 	// Publish something on "beeswax.events" every second
 	hp.Publish("beeswax.events", outputs)
 
-/*
-	// Subscribe to "beeswax.events" and print everything coming in on it
-	// prints something once every second - verify with others ::
-	channel2 := make(chan hpfeeds.Message)
-	hp.Subscribe("beeswax.events", channel2)
-	go func() {
-		for foo := range channel2 {
-			fmt.Println(foo.Name, string(foo.Payload))
-		}
-	}()
+	/*
+		// Subscribe to "beeswax.events" and print everything coming in on it
+		// prints something once every second - verify with others ::
+		channel2 := make(chan hpfeeds.Message)
+		hp.Subscribe("beeswax.events", channel2)
+		go func() {
+			for foo := range channel2 {
+				fmt.Println(foo.Name, string(foo.Payload))
+			}
+		}()
 	*/
 
 	// Wait for disconnect

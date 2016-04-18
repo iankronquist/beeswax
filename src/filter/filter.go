@@ -1,8 +1,8 @@
 package filter
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strings"
 )

@@ -81,18 +81,19 @@ func StartMonitor(c Config) {
 	go filter.StartFilterStream(FSMessagesOut, FSMessages)
 	for {
 		select {
-			case message := <-execMessages:
-				fmt.Println("exec: ", string(message))
-				go func () { reporterMessages <- message }()
-			case message := <-networkMessages:
-				fmt.Println("net: ", string(message))
-				go func () { reporterMessages <- message }()
-			case message := <-FSMessagesOut:
-				fmt.Println("filtered fs: ", string(message))
-				go func () { reporterMessages <- message }()
+		case message := <-execMessages:
+			fmt.Println("exec: ", string(message))
+			go func() { reporterMessages <- message }()
+		case message := <-networkMessages:
+			fmt.Println("net: ", string(message))
+			go func() { reporterMessages <- message }()
+		case message := <-FSMessagesOut:
+			fmt.Println("filtered fs: ", string(message))
+			go func() { reporterMessages <- message }()
 		}
 	}
 
 	reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, reporterMessages)
-	for{}
+	for {
+	}
 }
