@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	_ "io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -80,9 +79,9 @@ func runCommandAndSlurpOutput(commandname string, args []string) ([]string, erro
 		fetch := true
 		line := []byte{}
 		for fetch {
-			partial_line, f, err := stdoutreader.ReadLine()
+			partialLine, f, err := stdoutreader.ReadLine()
 			fetch = f
-			line = append(line, partial_line...)
+			line = append(line, partialLine...)
 			if err == io.EOF {
 				slurp = false
 				break
@@ -120,9 +119,9 @@ func runCommandAndChannelOutput(commandname string, args []string, output chan<-
 		fetch := true
 		line := []byte{}
 		for fetch {
-			partial_line, f, err := stdoutreader.ReadLine()
+			partialLine, f, err := stdoutreader.ReadLine()
 			fetch = f
-			line = append(line, partial_line...)
+			line = append(line, partialLine...)
 			if err == io.EOF {
 				slurp = false
 				break
@@ -189,12 +188,12 @@ func (n NetMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	output := getDockerContainerProcessIds(dockerComposeName)
 	nmProcessorChan := make(chan []byte)
 	go networkMonitorProcessor(messages, nmProcessorChan)
-	for _, procId := range output {
-		err := setSymlink(procId, procId)
+	for _, procID := range output {
+		err := setSymlink(procID, procID)
 		if err != nil {
 			panic(err)
 		}
-		go startIPProcess(nmProcessorChan, procId, "tcpdump", "-tt", "-nn", "-i", "any", "-l")
+		go startIPProcess(nmProcessorChan, procID, "tcpdump", "-tt", "-nn", "-i", "any", "-l")
 	}
 }
 
@@ -202,13 +201,13 @@ func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) err
 	platform := []byte{}
 	carlson := []byte{}
 	pattern := "(\\d+\\.\\d+) IP (\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\.(\\d+) > (\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\.(\\d+)"
-	compiled_pattern, err := regexp.Compile(pattern)
+	compiledPattern, err := regexp.Compile(pattern)
 	if err != nil {
 		return err
 	}
 	for {
 		platform = <-receiving
-		matches := compiled_pattern.FindSubmatch(platform)
+		matches := compiledPattern.FindSubmatch(platform)
 		if len(matches) == 0 {
 			fmt.Println("Output did not match regex: ", string(platform))
 			continue
@@ -227,12 +226,10 @@ func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) err
 		fmt.Println("Sending json: ", string(carlson))
 		sending <- carlson
 	}
-
-	return nil
 }
-func startIPProcess(messages chan<- []byte, procId string, watcherName string,
+func startIPProcess(messages chan<- []byte, procID string, watcherName string,
 	watcherArgs ...string) {
-	arguments := []string{"netns", "exec", procId, watcherName}
+	arguments := []string{"netns", "exec", procID, watcherName}
 	arguments = append(arguments, watcherArgs...)
 	err := runCommandAndChannelOutput("ip", arguments, messages)
 	if err != nil {
@@ -313,13 +310,13 @@ func (m FSMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 		fetch := true
 		line := []byte{}
 		for fetch {
-			partial_line, f, err := stdoutReader.ReadLine()
+			partialLine, f, err := stdoutReader.ReadLine()
 			if err != nil {
 				fmt.Println("File monitor stopped")
 				panic(err)
 			}
 			fetch = f
-			line = append(line, partial_line...)
+			line = append(line, partialLine...)
 		}
 		messages <- line
 

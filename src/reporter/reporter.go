@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/fw42/go-hpfeeds"
 	"sync"
-	_ "time"
 )
 
 // Inspired by http://blog.golang.org/pipelines

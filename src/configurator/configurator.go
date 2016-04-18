@@ -30,16 +30,16 @@ func StartContainers(c Config) error {
 		fmt.Println(c.DockerComposeName, "up", "-d", containerName)
 
 		// Copy docker-compose stdout/stderr to configurator's
-		compose_stderr, err := containerProc.StderrPipe()
+		composeStderr, err := containerProc.StderrPipe()
 		if err != nil {
 			panic(err)
 		}
-		compose_stdout, err := containerProc.StdoutPipe()
+		composeStdout, err := containerProc.StdoutPipe()
 		if err != nil {
 			panic(err)
 		}
-		go io.Copy(os.Stdout, compose_stdout)
-		go io.Copy(os.Stderr, compose_stderr)
+		go io.Copy(os.Stdout, composeStdout)
+		go io.Copy(os.Stderr, composeStderr)
 
 		containerProc.Start()
 
@@ -94,6 +94,4 @@ func StartMonitor(c Config) {
 	}
 
 	reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, reporterMessages)
-	for {
-	}
 }
