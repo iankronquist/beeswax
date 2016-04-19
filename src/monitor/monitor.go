@@ -13,11 +13,11 @@ import (
 )
 
 type ipdata struct {
-	Epoch       string `json:"Epoch"`
-	SourceIP    string `json:"SourceIP"`
-	SourcePort  string `json:"SourcePort"`
-	ReceiveIP   string `json:"ReceiveIP"`
-	ReceivePort string `json:"ReceivePort"`
+	Epoch       string `json:"timestamp"`
+	SourceIP    string `json:"source_ip"`
+	SourcePort  string `json:"source_port"`
+	ReceiveIP   string `json:"dest_ip"`
+	ReceivePort string `json:"dest_port"`
 }
 
 /* The Monitor interface defines a series of methods which will be defined on
@@ -223,7 +223,6 @@ func networkMonitorProcessor(sending chan<- []byte, receiving <-chan []byte) err
 		if err != nil {
 			return err
 		}
-		fmt.Println("Sending json: ", string(carlson))
 		sending <- carlson
 	}
 }
