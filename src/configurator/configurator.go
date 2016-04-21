@@ -79,19 +79,25 @@ func StartMonitor(c Config) {
 	go fsMonitor.Start(FSMessages, c.DockerComposeName)
 	go execMonitor.Start(execMessages, c.DockerComposeName)
 	go filter.StartFilterStream(FSMessagesOut, FSMessages)
+	go reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, reporterMessages)
 	for {
 		select {
-		case message := <-execMessages:
-			fmt.Println("exec: ", string(message))
-			go func() { reporterMessages <- message }()
-		case message := <-networkMessages:
-			fmt.Println("net: ", string(message))
-			go func() { reporterMessages <- message }()
-		case message := <-FSMessagesOut:
-			fmt.Println("filtered fs: ", string(message))
-			go func() { reporterMessages <- message }()
+		case message, err := <-execMessages:
+			if err {
+				fmt.Println("exec: ", string(message))
+				go func() { reporterMessages <- message }()
+			}
+		case message, err := <-networkMessages:
+			if err {
+				fmt.Println("net: ", string(message))
+				go func() { reporterMessages <- message }()
+			}
+		case message, err := <-FSMessagesOut:
+			if err {
+				fmt.Println("filtered fs: ", string(message))
+				go func() { reporterMessages <- message }()
+			}
 		}
 	}
 
-	reporter.Start(c.MHNHost, c.MHNPort, c.MHNIdent, c.MHNAuth, reporterMessages)
 }
