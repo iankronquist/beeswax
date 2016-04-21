@@ -77,7 +77,7 @@ static int nl_connect()
     if (rc == -1) {
         perror("bind");
         close(nl_sock);
-        return -1;
+        exit(EXIT_FAILURE);
     }
 
     return nl_sock;
