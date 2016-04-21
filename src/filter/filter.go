@@ -79,7 +79,10 @@ func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
 
 func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
-		message := <-receiving
+		message,ok := <-receiving
+		if !ok {
+			return
+		}
 		message = filterLowBytes(message)
 		zid := ZachsInotifyData{}
 		err := json.Unmarshal(message, &zid)
@@ -104,7 +107,10 @@ func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan 
 
 func (N NOPFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
 	for {
-		message := <-receiving
+		message,ok := <-receiving
+		if !ok{
+			return
+		}
 		sending <- message
 	}
 }
