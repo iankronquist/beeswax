@@ -164,7 +164,6 @@ int main(int argc, char* argv[])
 			json_safe(file_name,steve.path[i][0],strlen(file_name));
 			steve.w_last[i] = 1;
 			steve.w_count[i] = 1;
-			status(steve);
 		}
 	}
 	else if(options[OPT_T])
@@ -259,6 +258,7 @@ static void cleanup()
 			free(steve.path[i][j]);
 		}
 		free(steve.path[i]);
+		close(steve.fd[i]);
 	}
 	free(poll_fd);
 	free(steve.path);
