@@ -1,6 +1,6 @@
 # None of Your Beeswax! [![build status](https://travis-ci.org/iankronquist/senior-project-experiment.svg)](https://travis-ci.org/iankronquist/senior-project-experiment)
 
-![Project Logo](./next_gen.png)
+![Project Logo](./next_gen.png =200x)
 ## *A Next-Generation Honeypot*
 
 There are a wide variety of open source honeypot solutions available on the
