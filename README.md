@@ -1,7 +1,7 @@
 # None of Your Beeswax! [![build status](https://travis-ci.org/iankronquist/senior-project-experiment.svg)](https://travis-ci.org/iankronquist/senior-project-experiment)
 
-## *A Next-Generation Honeypot*
 ![Project Logo](./next_gen.png)
+## *A Next-Generation Honeypot*
 
 There are a wide variety of open source honeypot solutions available on the
 market, but most of these emulate the behavior of vulnerable software instead
