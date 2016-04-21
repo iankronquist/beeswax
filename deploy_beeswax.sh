@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -e
+set -x
+
 SERVER_URL=$1
 DEPLOY_KEY=$2
 
