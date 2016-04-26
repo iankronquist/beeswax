@@ -2,6 +2,7 @@ FROM centos:7
 
 
 ENV wordpress_url https://wordpress.org/wordpress-3.0.tar.gz
+RUN rpm --rebuilddb 
 RUN yum -y install httpd php php-mysql curl
 RUN curl $wordpress_url > wordpress.tar.gz
 RUN tar xzf wordpress.tar.gz -C /
