@@ -6,20 +6,23 @@ set -x
 SERVER_URL=$1
 DEPLOY_KEY=$2
 
-INSTALL_PATH=/opt/beeswax_gopath/src/
+export GOPATH=/opt/beeswax_gopath
+INSTALL_PATH=$GOPATH/src/
 HONEYPOT_NAME=senior-project-experiment
 MHN_PATH=/opt/mhn/
 
 
 install_dependencies() {
 	apt-get update
-	apt-get -y install docker tcpdump gcc golang git supervisor python-pip
+	apt-get -y install docker.io tcpdump gcc golang git supervisor python-pip
 	pip install docker-compose
 }
 
 install_project() {
-	mkdir -p $INSTALL_PATH
-	git clone http://github.com/iankronquist/senior-project-experiment.git $INSTALL_PATH/$HONEYPOT_NAME
+	if [[ ! -e $INSTALL_PATH ]]; then
+		mkdir -p $INSTALL_PATH
+		git clone http://github.com/iankronquist/senior-project-experiment.git $INSTALL_PATH/$HONEYPOT_NAME
+	fi
 	cd $INSTALL_PATH/$HONEYPOT_NAME
 	make all
 }
@@ -27,6 +30,7 @@ install_project() {
 # The docker group must already exist
 # The project must already be cloned
 make_user() {
+	groupadd docker
 	useradd -d /home/beeswax -s /bin/bash -m beeswax -g users -G docker
 	chown -R beeswax $INSTALL_PATH
 }
