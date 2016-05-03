@@ -48,7 +48,7 @@ make_configs() {
 	"mhn authorization": "$HPF_SECRET"
 }
 EOF
-	cp $INSTALL_PATH/$HONEYPOT_NAME/beeswaf_supervisor.conf /etc/supervisor/conf.d/beeswax.conf
+	cp $INSTALL_PATH/$HONEYPOT_NAME/beeswax_supervisor.conf /etc/supervisor/conf.d/beeswax.conf
 	
 	echo "DOCKER_OPTS=\"--storage-driver=devicemapper\"" >> /etc/default/docker
 }
