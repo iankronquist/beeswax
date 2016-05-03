@@ -19,7 +19,7 @@ install_dependencies() {
 }
 
 install_project() {
-	if [[ ! -e $INSTALL_PATH ]]; then
+	if [ ! -e $INSTALL_PATH ]; then
 		mkdir -p $INSTALL_PATH
 		git clone http://github.com/iankronquist/senior-project-experiment.git $INSTALL_PATH/$HONEYPOT_NAME
 	fi
@@ -49,6 +49,8 @@ make_configs() {
 }
 EOF
 	cp $INSTALL_PATH/$HONEYPOT_NAME/beeswaf_supervisor.conf /etc/supervisor/conf.d/beeswax.conf
+	
+	echo "DOCKER_OPTS=\"--storage-driver=devicemapper\"" >> /etc/default/docker
 }
 
 # The project must already be cloned
