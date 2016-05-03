@@ -581,13 +581,15 @@ static int watch_this(const char *pathname)
 		{
 			fprintf(stderr,"Error: Try Putting Subdirectories"
 					" in Command Line\n");
+			return -1;
 		}
 		else
 		{
 			fprintf(stderr,"Error Occured Adding to Watch List:"
-				" %s %s\n",pathname,strerror(errno));
+				" \n\t%s %s \n\tAttempting to Continue\n",
+				pathname,strerror(errno));
+			return 0;
 		}
-		return -1;
 	}
 	steve.wd[steve.current_f][steve.current_w] = fd;
 	// Get JSON safe pathname
