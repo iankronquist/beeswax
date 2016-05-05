@@ -79,11 +79,11 @@ int main(int argc, char* argv[])
 		{
 			case 'w':
 				options[OPT_W] = 1;
-                options[OPT_T] = 0;
+				options[OPT_T] = 0;
 				break;
 			case 't':
 				options[OPT_T] = 1;
-                options[OPT_W] = 0;
+				options[OPT_W] = 0;
 				break;
 			case 'h':
 				help_menu(argv[0]);
@@ -418,29 +418,29 @@ handle_events(int fd, int *wd,int add_child )
 			{
 				mask_ptr = in_delete_self_cstring;
 			}
-            else if(IN_UNMOUNT & event->mask)
-            {
-                mask_ptr = in_unmount_cstring;
-            }
-            else if(IN_Q_OVERFLOW & event->mask)
-            {
-                mask_ptr = in_q_overflow_cstring;
-            }
-            else
-            {
-                mask_ptr = uncaught_cstring;
-            }
-        
+			else if(IN_UNMOUNT & event->mask)
+			{
+				mask_ptr = in_unmount_cstring;
+			}
+			else if(IN_Q_OVERFLOW & event->mask)
+			{
+				mask_ptr = in_q_overflow_cstring;
+			}
+			else
+			{
+				mask_ptr = uncaught_cstring;
+			}
+
 			if(event->len == 0)
 			{
 				print_json(buffer,mask_ptr,
-				steve.path[steve.current_f][steve.current_w],
+						steve.path[steve.current_f][steve.current_w],
 						"",type_ptr);
 			}
 			else
 			{
 				print_json(buffer,mask_ptr,
-				steve.path[steve.current_f][steve.current_w],
+						steve.path[steve.current_f][steve.current_w],
 						event->name,type_ptr);
 			}
 		}
@@ -575,11 +575,11 @@ static int watch_this(const char *pathname)
 	if(steve.w_count[steve.current_f] <= steve.w_last[steve.current_f])
 	{
 		temp = realloc(steve.wd[steve.current_f],
-		((steve.w_count[steve.current_f] + INCREMENT)*sizeof(int)));
-		
+				((steve.w_count[steve.current_f] + INCREMENT)*sizeof(int)));
+
 		temp_paths = realloc(steve.path[steve.current_f],
-		((steve.w_count[steve.current_f] + INCREMENT)*sizeof(char*)));
-		
+				((steve.w_count[steve.current_f] + INCREMENT)*sizeof(char*)));
+
 		if((temp != NULL) && temp_paths != NULL)
 		{
 			steve.wd[steve.current_f] = temp;
@@ -605,8 +605,8 @@ static int watch_this(const char *pathname)
 		else
 		{
 			fprintf(stderr,"Error Occured Adding to Watch List:"
-				" \n\t%s %s \n\tAttempting to Continue\n",
-				pathname,strerror(errno));
+					" \n\t%s %s \n\tAttempting to Continue\n",
+					pathname,strerror(errno));
 			return 0;
 		}
 	}
@@ -615,7 +615,7 @@ static int watch_this(const char *pathname)
 	steve.path[steve.current_f][steve.current_w] =
 		calloc(PATH_LIMIT,sizeof(char));
 	json_safe(pathname, steve.path[steve.current_f][steve.current_w],
-		strlen(pathname));
+			strlen(pathname));
 	steve.w_last[steve.current_f] += 1;
 	steve.current_w++;
 	return 0;
@@ -679,7 +679,7 @@ static void status(struct znotify z)
 	{
 		fprintf(stderr,"\tFile Descriptor: %d\n",z.fd[i]);
 		fprintf(stderr,"\tWatch Descriptor Count:"	
-			" %d out of %d\n",z.w_last[i],z.w_count[i]);
+				" %d out of %d\n",z.w_last[i],z.w_count[i]);
 		for(j=0; j<z.w_last[i];j++)
 		{
 			fprintf(stderr,"\tPathname[%d][%d] %s\n",i,j,z.path[i][j]);
