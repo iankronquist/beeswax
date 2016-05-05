@@ -20,19 +20,24 @@
 #define OPT_E 4 // Every Event is Reported
 
 // Defined in limits.h
-const char *in_access_cstring           = "IN_ACCESS";
-const char *in_modify_cstring           = "IN_MODIFY";
-const char *in_attrib_cstring           = "IN_ATTRIB";
-const char *in_close_write_cstring      = "IN_CLOSE_WRITE";
-const char *in_close_no_write_cstring   = "IN_CLOSE_NOWRITE";
-const char *in_open_cstring             = "IN_OPEN";
-const char *in_moved_from_cstring       = "IN_MOVED_FROM";
-const char *in_moved_to_cstring         = "IN_MOVED_TO";
-const char *in_create_cstring           = "IN_CREATE";
-const char *in_delete_cstring           = "IN_DELETE";
-const char *in_delete_self_cstring      = "IN_DELETE_SELF";
-const char *folder_cstring              = "FOLDER";
-const char *file_cstring                = "FILE";
+const char *in_access_cstring           = C_ACCESS;
+const char *in_modify_cstring           = C_MODIFY;
+const char *in_attrib_cstring           = C_ATTRIB;
+const char *in_close_write_cstring      = C_CLOSE_WRITE;
+const char *in_close_no_write_cstring   = C_CLOSE_NOWRITE;
+const char *in_open_cstring             = C_OPEN;
+const char *in_moved_from_cstring       = C_MOVED_FROM;
+const char *in_moved_to_cstring         = C_MOVED_TO;
+const char *in_create_cstring           = C_CREATE;
+const char *in_delete_cstring           = C_DELETE;
+const char *in_delete_self_cstring      = C_DELETE_SELF;
+const char *in_unmount_cstring          = C_UNMOUNT;
+const char *in_q_overflow_cstring       = C_Q_OVERFLOW;
+const char *in_ignored_cstring          = C_IGNORED;
+const char *uncaught_cstring            = C_UNKNOWN;
+
+const char *folder_cstring              = C_FOLDER;
+const char *file_cstring                = C_FILE;
 
 struct znotify steve;
 struct pollfd *poll_fd;
@@ -74,9 +79,11 @@ int main(int argc, char* argv[])
 		{
 			case 'w':
 				options[OPT_W] = 1;
+                options[OPT_T] = 0;
 				break;
 			case 't':
 				options[OPT_T] = 1;
+                options[OPT_W] = 0;
 				break;
 			case 'h':
 				help_menu(argv[0]);
@@ -411,7 +418,19 @@ handle_events(int fd, int *wd,int add_child )
 			{
 				mask_ptr = in_delete_self_cstring;
 			}
-
+            else if(IN_UNMOUNT & event->mask)
+            {
+                mask_ptr = in_unmount_cstring;
+            }
+            else if(IN_Q_OVERFLOW & event->mask)
+            {
+                mask_ptr = in_q_overflow_cstring;
+            }
+            else
+            {
+                mask_ptr = uncaught_cstring;
+            }
+        
 			if(event->len == 0)
 			{
 				print_json(buffer,mask_ptr,
