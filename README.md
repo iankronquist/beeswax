@@ -87,9 +87,8 @@ $ cd gopath/src/github.com/iankronquist/senior-project-experiment
 ## Building and Running
 Run:
 ```
-$ make c_fs_monitor/inotify
 $ make
-$ ./senior-project-experiment
+$ sudo COMPOSE_API_VERSION=1.18 ./senior-project-experiment
 ```
 
 Next visit http://localhost:8000 in your web browser and finish configuring
