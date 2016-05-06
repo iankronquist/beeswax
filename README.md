@@ -109,3 +109,23 @@ $ sudo ip netns exec wordpress tcpdump > dump
 You can find all of the files the containers use under here:
 `/mnt/sda1/var/lib/docker/aufs/mnt`
 I found this out from reading `docker info`
+
+## Troubleshooting
+If you get the following error trying to run it the first time: 
+```
+Traceback (most recent call last):
+  File "/bin/docker-compose", line 5, in <module>
+    from pkg_resources import load_entry_point
+  File "/usr/lib/python2.7/site-packages/pkg_resources.py", line 3011, in <module>
+    parse_requirements(__requires__), Environment()
+  File "/usr/lib/python2.7/site-packages/pkg_resources.py", line 626, in resolve
+    raise DistributionNotFound(req)
+pkg_resources.DistributionNotFound: backports.ssl-match-hostname>=3.5
+exit status 1
+panic: exit status 1
+```
+Just run the following commands:
+```
+$ sudo pip uninstall backports.ssl-match-hostname
+$ sudo pip install backports.ssl-match-hostname
+```
