@@ -1,7 +1,9 @@
 CC=gcc
 CFLAGS=-Werror -Wall -Wextra -std=c99 -g -lpthread -D DEBUG
 
-LATEXINSTALL=/usr/local/apps/tex_live/current/bin/x86_64-linux/
+LATEXINSTALL=""
+# To build on os-class, uncomment this line.
+#LATEXINSTALL=/usr/local/apps/tex_live/current/bin/x86_64-linux/
 # Latex stuff
 LATEX	= $(LATEXINSTALL)latex -shell-escape
 BIBTEX	= $(LATEXINSTALL)bibtex
@@ -51,3 +53,4 @@ clean:
 
 
 .PHONY: all show clean ps pdf showps debug test
+
