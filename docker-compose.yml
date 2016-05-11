@@ -6,12 +6,10 @@ mysql:
     MYSQL_USER: wp
     MYSQL_DATABASE: wp
     MYSQL_ROOT_PASSWORD: root
-  ports:
-    - "3306"
 
 wordpress:
   build: .
   ports:
     - "8000:80"
   links:
-    - mysql
+    - mysql:db
