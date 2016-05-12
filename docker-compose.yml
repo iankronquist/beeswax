@@ -10,6 +10,6 @@ mysql:
 wordpress:
   build: .
   ports:
-    - "8000:80"
+    - "80:80"
   links:
     - mysql:db
