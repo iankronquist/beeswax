@@ -70,6 +70,8 @@ Vagrant.configure(2) do |config|
     sudo yum install -y tcpdump gcc golang git
     sudo easy_install pip
     sudo pip install docker-compose
+    # Requirement for docker-compose
+    sudo pip install backports.ssl-match-hostname --upgrade
     sudo systemctl enable docker
     sudo systemctl start docker
     sudo groupadd docker
