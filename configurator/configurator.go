@@ -3,9 +3,9 @@ package configurator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/iankronquist/beeswax/src/filter"
-	"github.com/iankronquist/beeswax/src/monitor"
-	"github.com/iankronquist/beeswax/src/reporter"
+	"github.com/iankronquist/beeswax/filter"
+	"github.com/iankronquist/beeswax/monitor"
+	"github.com/iankronquist/beeswax/reporter"
 	"io"
 	"io/ioutil"
 	"os"
@@ -25,9 +25,9 @@ type Config struct {
 func StartContainers(c Config) error {
 
 	for _, containerName := range c.Containers {
-		containerProc := exec.Command(c.DockerComposeName, "up", "-d", containerName)
+		containerProc := exec.Command(c.DockerComposeName, "-f", "containers/docker-compose.yml", "up", "-d", containerName)
 
-		fmt.Println(c.DockerComposeName, "up", "-d", containerName)
+		fmt.Println(c.DockerComposeName, "-f", "containers/docker-compose.yml", "up", "-d", containerName)
 
 		// Copy docker-compose stdout/stderr to configurator's
 		composeStderr, err := containerProc.StderrPipe()

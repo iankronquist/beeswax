@@ -2,7 +2,7 @@ CC=gcc
 
 all: beeswax c_monitor_agents/znotify c_monitor_agents/proc
 
-beeswax: deps main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
+beeswax: deps main.go monitor/*.go filter/*.go reporter/*.go configurator/*.go
 	go build
 
 c_monitor_agents/test_fs_monitor: c_monitor_agents/test_fs_monitor.c
@@ -18,10 +18,10 @@ deps:
 	go get
 
 test: deps c_monitor_agents/test_fs_monitor
-	go test ./src/configurator
-	go test ./src/monitor
-	go test ./src/filter
-	go test ./src/reporter
+	go test ./configurator
+	go test ./monitor
+	go test ./filter
+	go test ./reporter
 
 clean:
 	rm -f beeswax c_monitor_agents/znotify \
