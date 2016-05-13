@@ -39,7 +39,7 @@ make_configs() {
 	source $MHN_PATH/scripts/registration.sh $SERVER_URL $DEPLOY_KEY "beeswax"
 	cat  > $INSTALL_PATH/$HONEYPOT_NAME/honeypot_config.json <<EOF
 {
-  "monitor process name": "c_fs_monitor/znotify",
+  "monitor process name": "c_monitor_agents/znotify",
   "docker compose name": "docker-compose",
   "container names": ["mysql", "wordpress"],
 	"mhn host": "$HPF_HOST",
@@ -48,7 +48,7 @@ make_configs() {
 	"mhn authorization": "$HPF_SECRET"
 }
 EOF
-	cp $INSTALL_PATH/$HONEYPOT_NAME/beeswax_supervisor.conf /etc/supervisor/conf.d/beeswax.conf
+	cp $INSTALL_PATH/$HONEYPOT_NAME/mhn/beeswax_supervisor.conf /etc/supervisor/conf.d/beeswax.conf
 	
 	echo "DOCKER_OPTS=\"--storage-driver=devicemapper\"" >> /etc/default/docker
 }
