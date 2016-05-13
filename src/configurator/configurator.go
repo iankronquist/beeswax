@@ -3,9 +3,9 @@ package configurator
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/iankronquist/senior-project-experiment/src/filter"
-	"github.com/iankronquist/senior-project-experiment/src/monitor"
-	"github.com/iankronquist/senior-project-experiment/src/reporter"
+	"github.com/iankronquist/beeswax/src/filter"
+	"github.com/iankronquist/beeswax/src/monitor"
+	"github.com/iankronquist/beeswax/src/reporter"
 	"io"
 	"io/ioutil"
 	"os"

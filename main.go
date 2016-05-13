@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/iankronquist/senior-project-experiment/src/configurator"
-	_ "github.com/iankronquist/senior-project-experiment/src/filter"
-	_ "github.com/iankronquist/senior-project-experiment/src/monitor"
-	_ "github.com/iankronquist/senior-project-experiment/src/reporter"
+	"github.com/iankronquist/beeswax/src/configurator"
+	_ "github.com/iankronquist/beeswax/src/filter"
+	_ "github.com/iankronquist/beeswax/src/monitor"
+	_ "github.com/iankronquist/beeswax/src/reporter"
 )
 
 func main() {

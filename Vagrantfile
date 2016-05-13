@@ -37,7 +37,7 @@ Vagrant.configure(2) do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder ".", "/home/vagrant/gopath/src/github.com/iankronquist/senior-project-experiment"
+  config.vm.synced_folder ".", "/home/vagrant/gopath/src/github.com/iankronquist/beeswax"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
@@ -70,6 +70,8 @@ Vagrant.configure(2) do |config|
     sudo yum install -y tcpdump gcc golang git
     sudo easy_install pip
     sudo pip install docker-compose
+    # Requirement for docker-compose
+    sudo pip install backports.ssl-match-hostname --upgrade
     sudo systemctl enable docker
     sudo systemctl start docker
     sudo groupadd docker
