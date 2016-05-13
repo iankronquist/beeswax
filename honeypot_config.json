@@ -1,5 +1,5 @@
 {
-  "monitor process name": "c_fs_monitor/znotify",
+  "monitor process name": "c_monitor_agents/znotify",
   "docker compose name": "docker-compose",
   "container names": ["mysql", "wordpress"],
 	"mhn host": "hpfriends.honeycloud.net",
