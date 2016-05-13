@@ -8,7 +8,7 @@ DEPLOY_KEY=$2
 
 export GOPATH=/opt/beeswax_gopath
 INSTALL_PATH=$GOPATH/src/
-HONEYPOT_NAME=senior-project-experiment
+HONEYPOT_NAME=beeswax
 MHN_PATH=/opt/mhn/
 
 
@@ -21,7 +21,7 @@ install_dependencies() {
 install_project() {
 	if [ ! -e $INSTALL_PATH ]; then
 		mkdir -p $INSTALL_PATH
-		git clone http://github.com/iankronquist/senior-project-experiment.git $INSTALL_PATH/$HONEYPOT_NAME
+		git clone http://github.com/iankronquist/beeswax.git $INSTALL_PATH/$HONEYPOT_NAME
 	fi
 	cd $INSTALL_PATH/$HONEYPOT_NAME
 	make all

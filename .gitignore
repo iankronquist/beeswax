@@ -1,6 +1,6 @@
 .vagrant/
 .*.swp
-senior-project-experiment
+beeswax
 
 c_fs_monitor/a.out
 c_fs_monitor/inotify

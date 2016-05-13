@@ -1,4 +1,4 @@
-# None of Your Beeswax! [![build status](https://travis-ci.org/iankronquist/senior-project-experiment.svg)](https://travis-ci.org/iankronquist/senior-project-experiment)
+# None of Your Beeswax! [![build status](https://travis-ci.org/iankronquist/beeswax.svg)](https://travis-ci.org/iankronquist/beeswax)
 
 ![Project Logo](./next_gen.png)
 ## *A Next-Generation Honeypot*
@@ -81,14 +81,14 @@ $ vagrant up --provision
 Next, ssh to the vm and enter the project directory:
 ```
 $ vagrant ssh
-$ cd gopath/src/github.com/iankronquist/senior-project-experiment
+$ cd gopath/src/github.com/iankronquist/beeswax
 ```
 
 ## Building and Running
 Run:
 ```
 $ make
-$ sudo COMPOSE_API_VERSION=1.18 ./senior-project-experiment
+$ sudo COMPOSE_API_VERSION=1.18 ./beeswax
 ```
 
 Next visit http://localhost:8000 in your web browser and finish configuring
@@ -99,7 +99,7 @@ WordPress.
 Configure `ip netns`:
 ```
 $ sudo mkdir -p /var/run/netns/
-$ sudo ln -sf /proc/`docker inspect -f '{{ .State.Pid }}' seniorprojectexperiment_wordpress_1`/ns/net /var/run/netns/wordpress
+$ sudo ln -sf /proc/`docker inspect -f '{{ .State.Pid }}' beeswax_wordpress_1`/ns/net /var/run/netns/wordpress
 ```
 
 ```

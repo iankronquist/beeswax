@@ -1,8 +1,8 @@
 CC=gcc
 
-all: senior-project-experiment c_fs_monitor/znotify cproc_monitor/proc
+all: beeswax c_fs_monitor/znotify cproc_monitor/proc
 
-senior-project-experiment: deps main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
+beeswax: deps main.go src/monitor/*.go src/filter/*.go src/reporter/*.go src/configurator/*.go
 	go build
 
 c_fs_monitor/test_fs_monitor: c_fs_monitor/test_fs_monitor.c
@@ -24,7 +24,7 @@ test: deps c_fs_monitor/test_fs_monitor
 	go test ./src/reporter
 
 clean:
-	rm -f senior-project-experiment c_fs_monitor/znotify \
+	rm -f beeswax c_fs_monitor/znotify \
 		c_fs_monitor/test_fs_monitor
 
 .PHONY: deps clean all test
