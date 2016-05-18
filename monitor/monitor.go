@@ -141,7 +141,7 @@ func getDockerContainerIds(dockerComposeName string) []string {
 	if len(dockerContainerIds) != 0 {
 		return dockerContainerIds
 	}
-	ids, err := runCommandAndSlurpOutput("docker-compose", []string{"ps", "-q"})
+	ids, err := runCommandAndSlurpOutput(dockerComposeName, []string{"-f", "containers/docker-compose.yml", "ps", "-q"})
 	if err != nil {
 		panic(err)
 	}
@@ -177,7 +177,7 @@ func getDockerContainerProcessIds(dockerComposeName string) []string {
 
 func (e ExecMonitor) Start(messages chan<- []byte, dockerComposeName string) {
 	ids := getDockerContainerIds(dockerComposeName)
-	err := runCommandAndChannelOutput("cproc_monitor/proc", ids, messages)
+	err := runCommandAndChannelOutput("c_monitor_agents/proc", ids, messages)
 	if err != nil {
 		fmt.Println("Exec monitor failed")
 		panic(err)

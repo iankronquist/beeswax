@@ -2,11 +2,9 @@
 .*.swp
 beeswax
 
-c_fs_monitor/a.out
-c_fs_monitor/inotify
-c_fs_monitor/znotify
-c_fs_monitor/test_fs_monitor
-cproc_monitor/proc
+c_monitor_agents/inotify
+c_monitor_agents/znotify
+c_monitor_agents/test_fs_monitor
+c_monitor_agents/proc
 
-cproc_monitor/a.out
 .DS_Store

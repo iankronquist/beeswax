@@ -1,6 +1,6 @@
 # None of Your Beeswax! [![build status](https://travis-ci.org/iankronquist/beeswax.svg)](https://travis-ci.org/iankronquist/beeswax)
 
-![Project Logo](./next_gen.png)
+![Project Logo](./images/next_gen.png)
 ## *A Next-Generation Honeypot*
 
 There are a wide variety of open source honeypot solutions available on the
@@ -51,7 +51,7 @@ Consequently, we have divided the system into four components we term the
 Configurator, Monitor, Filter, and Reporter. Messages will be passed between
 these components.
 
-![Architecture Diagram](./architecturediagram.png)
+![Architecture Diagram](./images/architecturediagram.png)
 
 
 ## Installation

@@ -1,10 +1,7 @@
 package main
 
 import (
-	"github.com/iankronquist/beeswax/src/configurator"
-	_ "github.com/iankronquist/beeswax/src/filter"
-	_ "github.com/iankronquist/beeswax/src/monitor"
-	_ "github.com/iankronquist/beeswax/src/reporter"
+	"github.com/iankronquist/beeswax/configurator"
 )
 
 func main() {

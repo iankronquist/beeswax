@@ -9,9 +9,10 @@ RUN tar xzf wordpress.tar.gz -C /
 RUN cp -r wordpress/* /var/www/html
 RUN rm wordpress.tar.gz
 
-COPY ./wp-config.php /var/www/html/wp-config.php
+COPY ./configs/wp-config.php /var/www/html/wp-config.php
 EXPOSE 80
-ADD ./000-default.conf /etc/httpd/sites-available/000-default.conf
-ADD ./httpd.conf /etc/httpd/conf/httpd.conf
+ADD ./configs/000-default.conf /etc/httpd/sites-available/000-default.conf
+ADD ./configs/httpd.conf /etc/httpd/conf/httpd.conf
 RUN chown apache /var/www/html -R
+
 CMD ["httpd", "-DFOREGROUND"]
