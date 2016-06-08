@@ -274,8 +274,18 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
                         nlcn_msg.proc_ev.event_data.exit.exit_code);
                 }
                 break;
+            case PROC_EVENT_PTRACE:
+                fprintf(stderr, "unhandled proc event ptrace\n");
+                break;
+            case PROC_EVENT_COMM:
+                fprintf(stderr, "unhandled proc event comm\n");
+                break;
+            case PROC_EVENT_COREDUMP:
+                fprintf(stderr, "unhandled proc event coredump\n");
+                break;
             default:
-                fprintf(stderr, "unhandled proc event\n");
+                fprintf(stderr, "unhandled proc event %x\n",
+                        nlcn_msg.proc_ev.what);
                 break;
         }
     }
