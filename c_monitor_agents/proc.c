@@ -1,55 +1,60 @@
-#include <assert.h>
-#include <sys/socket.h>
 #include <linux/netlink.h>
 #include <linux/connector.h>
 #include <linux/cn_proc.h>
+
 #include <signal.h>
+#include <sys/socket.h>
+
+#include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <unistd.h>
 #include <limits.h>
 #include <math.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 #define SLURP_AMOUNT 1024
 
 void print_json_fork(int parent_pid, int parent_tgid, int child_pid,
-        int child_tgid) {
+        int child_tgid, time_t time) {
     fprintf(stdout, "{\"type\": \"fork\" \"parent_pid\": %d, "
                     "\"parent_tgid\": %d, \"child_pid\": %d, "
-                    "\"child_tgid\": %d}\n",
-       parent_pid, parent_tgid, child_pid, child_tgid);
+                    "\"child_tgid\": %d, \"time\": %d}\n",
+       parent_pid, parent_tgid, child_pid, child_tgid, time);
     fflush(stdout);
 }
 
-void print_json_exec(int proc_pid, int proc_tgid) {
+void print_json_exec(int proc_pid, int proc_tgid, time_t time) {
     fprintf(stdout, "{\"type\": \"exec\" \"pid\": %d, "
-                    "\"tgid\": %d}\n",
-        proc_pid, proc_tgid);
+                    "\"tgid\": %d, \"time\": %d}\n",
+        proc_pid, proc_tgid, time);
     fflush(stdout);
 }
 
-void print_json_uid_change(int pid, int tgid, int ruid, int euid) {
+void print_json_uid_change(int pid, int tgid, int ruid, int euid,
+        time_t time) {
     fprintf(stdout, "{\"type\": \"uid_change\" \"pid\": %d, \"tgid\": %d, "
-                    "\"ruid\": %d, \"euid\": %d}\n",
-           pid, tgid, ruid, euid);
+                    "\"ruid\": %d, \"euid\": %d, \"time\": %d}\n",
+           pid, tgid, ruid, euid, time);
     fflush(stdout);
 }
 
-void print_json_gid_change(int pid, int tgid, int ruid, int euid) {
+void print_json_gid_change(int pid, int tgid, int ruid, int euid,
+        time_t time) {
     fprintf(stdout, "{\"type\": \"gid_change\" \"pid\": %d, \"tgid\": %d, "
-                    "\"ruid\": %d, \"euid\": %d}\n",
-           pid, tgid, ruid, euid);
+                    "\"ruid\": %d, \"euid\": %d, \"time\": %d}\n",
+           pid, tgid, ruid, euid, time);
     fflush(stdout);
 }
 
-void print_json_exit(int proc_pid, int proc_tgid, int exit_code) {
+void print_json_exit(int proc_pid, int proc_tgid, int exit_code, time_t time) {
     fprintf(stdout, "{\"type\": \"exit\" \"pid\": %d, \"tgid\": %d, "
-                    "\"exit_code\": %d}\n",
-            proc_pid, proc_tgid, exit_code);
+                    "\"exit_code\": %d, \"time\": %d}\n",
+            proc_pid, proc_tgid, exit_code, time);
     fflush(stdout);
 }
 
@@ -221,6 +226,7 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
             perror("netlink recv");
             return -1;
         }
+        time_t cur_time = time(NULL);
 
         switch (nlcn_msg.proc_ev.what) {
             case PROC_EVENT_NONE:
@@ -233,7 +239,8 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
                         nlcn_msg.proc_ev.event_data.fork.parent_pid,
                         nlcn_msg.proc_ev.event_data.fork.parent_tgid,
                         nlcn_msg.proc_ev.event_data.fork.child_pid,
-                        nlcn_msg.proc_ev.event_data.fork.child_tgid);
+                        nlcn_msg.proc_ev.event_data.fork.child_tgid,
+                        cur_time);
                 }
                 break;
             case PROC_EVENT_EXEC:
@@ -241,7 +248,8 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
                             nlcn_msg.proc_ev.event_data.exec.process_pid)) {
                     print_json_exec(
                         nlcn_msg.proc_ev.event_data.exec.process_pid,
-                        nlcn_msg.proc_ev.event_data.exec.process_tgid);
+                        nlcn_msg.proc_ev.event_data.exec.process_tgid,
+                        cur_time);
                 }
                 break;
             case PROC_EVENT_UID:
@@ -251,7 +259,8 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
                         nlcn_msg.proc_ev.event_data.id.process_pid,
                         nlcn_msg.proc_ev.event_data.id.process_tgid,
                         nlcn_msg.proc_ev.event_data.id.r.ruid,
-                        nlcn_msg.proc_ev.event_data.id.e.euid);
+                        nlcn_msg.proc_ev.event_data.id.e.euid,
+                        cur_time);
                 }
                 break;
             case PROC_EVENT_GID:
@@ -261,7 +270,8 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
                         nlcn_msg.proc_ev.event_data.id.process_pid,
                         nlcn_msg.proc_ev.event_data.id.process_tgid,
                         nlcn_msg.proc_ev.event_data.id.r.ruid,
-                        nlcn_msg.proc_ev.event_data.id.e.euid);
+                        nlcn_msg.proc_ev.event_data.id.e.euid,
+                        cur_time);
                     continue;
                 }
                 break;
@@ -271,7 +281,8 @@ static int handle_proc_ev(int nl_sock, int argc, const char **docker_ids)
                     print_json_exit(
                         nlcn_msg.proc_ev.event_data.exit.process_pid,
                         nlcn_msg.proc_ev.event_data.exit.process_tgid,
-                        nlcn_msg.proc_ev.event_data.exit.exit_code);
+                        nlcn_msg.proc_ev.event_data.exit.exit_code,
+                        cur_time);
                 }
                 break;
             case PROC_EVENT_PTRACE:
