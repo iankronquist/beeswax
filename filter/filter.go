@@ -9,6 +9,7 @@ import (
 
 type FilterConfig struct {
 	Ignore []string `json:"ignore"`
+	IgnoreIp []string `json:"ignored ips"`
 }
 
 // Correct for a bug in znotify.
@@ -59,6 +60,8 @@ type Filter interface {
 
 type FSFilter struct{}
 
+type NetFilter struct{}
+
 type NOPFilter struct{}
 
 type ZachsInotifyData struct {
@@ -71,9 +74,24 @@ type ZachsInotifyData struct {
 func StartFilterStream(sending chan<- []byte, receiving <-chan []byte) {
 	fsFilter := FSFilter{}
 	nopFilter := NOPFilter{}
-	conf := FilterConfig{Ignore: []string{"/dev/"}}
+	conf, err := GetFilterConfig("filter_config.json")
+	if err != nil {
+		panic(err)
+	}
 	link := make(chan []byte)
 	go fsFilter.Start(conf, link, receiving)
+	go nopFilter.Start(conf, sending, link)
+}
+
+func StartNetFilterStream(sending chan<- []byte, receiving <-chan []byte) {
+	netFilter := NetFilter{}
+	nopFilter := NOPFilter{}
+	conf, err := GetFilterConfig("filter_config.json")
+	if err != nil {
+		panic(err)
+	}
+	link := make(chan []byte)
+	go netFilter.Start(conf, link, receiving)
 	go nopFilter.Start(conf, sending, link)
 }
 
@@ -95,6 +113,42 @@ func (f FSFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan 
 		notblacklisted := true
 		for _, i := range c.Ignore {
 			if strings.HasPrefix(zid.FilePath, i) {
+				notblacklisted = false
+				break
+			}
+		}
+		if notblacklisted {
+			sending <- message
+		}
+	}
+}
+
+type ipdata struct {
+	Epoch       string `json:"timestamp"`
+	SourceIP    string `json:"source_ip"`
+	SourcePort  string `json:"source_port"`
+	ReceiveIP   string `json:"dest_ip"`
+	ReceivePort string `json:"dest_port"`
+}
+
+func (n NetFilter) Start(c FilterConfig, sending chan<- []byte, receiving <-chan []byte) {
+	for {
+		message,ok := <-receiving
+		if !ok {
+			return
+		}
+		ipdata := ipdata{}
+		err := json.Unmarshal(message, &ipdata)
+		if err != nil {
+			fmt.Println("Error unmarshalling message: ", string(message),
+				err.Error(), message)
+			fmt.Println("Silently dropping the message")
+			//panic(err)
+		}
+		notblacklisted := true
+		for _, i := range c.IgnoreIp {
+			if strings.HasPrefix(ipdata.SourceIP, i) ||
+				strings.HasPrefix(ipdata.ReceiveIP, i) {
 				notblacklisted = false
 				break
 			}
